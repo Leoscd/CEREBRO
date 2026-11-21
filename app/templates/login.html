@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Ingresar · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Ingresar</h2>
+  {% if aviso %}<div class="notice">{{ aviso }}</div>{% endif %}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" class="stack">
+    <label for="login-email">Email</label>
+    <input id="login-email" type="email" name="email" autocomplete="email" required autofocus>
+    <label for="login-pass">Contraseña</label>
+    <input id="login-pass" type="password" name="password" autocomplete="current-password" required>
+    <p><button class="btn">Entrar</button></p>
+  </form>
+  <p class="muted"><a href="/olvide">¿Olvidaste tu contraseña?</a></p>
+  <p class="muted">¿Te llegó una invitación? Abrí el link del email para crear tu cuenta.</p>
+</div>
+{% endblock %}

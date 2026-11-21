@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ tipo.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/">Proyectos</a> › {{ tipo.nombre }}</p>
+<div class="section-heading">
+  <h1>{{ tipo.nombre }}</h1>
+  {% if puede_crear %}<a class="btn small" href="/admin/proyectos/nuevo?tipo={{ tipo.slug }}">Nuevo proyecto</a>{% endif %}
+</div>
+{% if tipo.descripcion %}<p class="muted">{{ tipo.descripcion }}</p>{% endif %}
+<p class="filtros">
+  <a class="pill {{ 'on' if not estado }}" href="?">Todos</a>
+  {% for k, v in ESTADOS.items() %}<a class="pill {{ 'on' if estado == k }}" href="?estado={{ k }}">{{ v }}</a>{% endfor %}
+</p>
+{% if proyectos %}
+<table class="tabla">
+  <thead><tr><th>Código</th><th>Proyecto</th><th>Cliente</th><th>Etapa</th><th>Estado</th><th>Equipo</th><th>Avance</th></tr></thead>
+  <tbody>
+  {% for p in proyectos %}
+  <tr>
+    <td><a href="/proyecto/{{ p.codigo }}">{{ p.codigo }}</a></td>
+    <td><a href="/proyecto/{{ p.codigo }}">{{ p.nombre }}</a>{% if p.localidad %}<br><span class="muted">{{ p.localidad }}</span>{% endif %}</td>
+    <td>{{ p.cliente_nombre or '—' }}</td>
+    <td>{{ ETAPAS[p.etapa] }}</td>
+    <td><span class="badge {{ p.estado }}">{{ ESTADOS[p.estado] }}</span></td>
+    <td>{{ p.equipo }}</td>
+    <td><div class="progressbar mini"><div style="width:{{ p.avance }}%"></div></div> {{ p.avance }}%</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No hay proyectos para mostrar.</p>{% endif %}
+{% endblock %}

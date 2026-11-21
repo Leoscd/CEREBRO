@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Clientes · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Clientes</p>
+<h1>Clientes</h1>
+<div class="card">
+  <h3>Nuevo cliente</h3>
+  <form method="post" action="/admin/clientes" class="fila-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <input name="nombre" placeholder="Nombre o razón social" aria-label="Nombre" required>
+    <input name="cuit" placeholder="CUIT" aria-label="CUIT">
+    <input type="email" name="email" placeholder="Email" aria-label="Email">
+    <input name="telefono" placeholder="Teléfono" aria-label="Teléfono">
+    <button class="btn small">Agregar</button>
+  </form>
+</div>
+<table class="tabla">
+  <thead><tr><th>Nombre</th><th>CUIT</th><th>Email</th><th>Teléfono</th><th>Proyectos</th></tr></thead>
+  <tbody>{% for c in clientes %}<tr><td>{{ c.nombre }}</td><td>{{ c.cuit or '—' }}</td><td>{{ c.email or '—' }}</td><td>{{ c.telefono or '—' }}</td><td>{{ c.proyectos }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">Sin clientes todavía.</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

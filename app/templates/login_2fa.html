@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Segundo factor · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Código de verificación</h2>
+  <p class="muted">Abrí tu app de autenticación y escribí el código de 6 dígitos.</p>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" action="/login/2fa" class="stack">
+    <label for="codigo">Código</label>
+    <input id="codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" required autofocus>
+    <p><button class="btn">Verificar</button></p>
+  </form>
+</div>
+{% endblock %}

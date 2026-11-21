@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ marca }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">g/</span> {{ marca }}</a>
+  <nav>
+    {% if user %}
+      <a href="/">Proyectos</a>
+      {% if user.rol_empresa == 'admin' %}<a href="/admin">Administración</a>{% endif %}
+      <a class="muted" href="/mi-cuenta">{{ user.nombre or user.email }}</a>
+      <form method="post" action="/logout" class="inline"><button class="btn ghost small">Salir</button></form>
+    {% endif %}
+  </nav>
+</header>
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

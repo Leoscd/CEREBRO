@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Segundo factor · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Segundo factor</h2>
+  {% if user.totp_secret %}
+    <div class="notice">Tu segundo factor ya está activo.</div>
+  {% else %}
+    <p class="muted">1. Escaneá el código con Google Authenticator, Microsoft Authenticator o similar.<br>2. Escribí el código que te muestra.</p>
+    <div class="qr">{{ qr | safe }}</div>
+    <p class="muted">¿No podés escanear? Cargá esta clave: <code>{{ secreto }}</code></p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/mi-cuenta/2fa/activar" class="stack">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <input type="hidden" name="secreto" value="{{ secreto }}">
+      <label for="codigo">Código de 6 dígitos</label>
+      <input id="codigo" name="codigo" inputmode="numeric" autocomplete="one-time-code" required>
+      <p><button class="btn">Activar</button></p>
+    </form>
+  {% endif %}
+  <p class="muted"><a href="/mi-cuenta">Volver a mi cuenta</a></p>
+</div>
+{% endblock %}

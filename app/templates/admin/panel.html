@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Administración · {{ marca }}{% endblock %}
+{% block content %}
+<h1>Administración</h1>
+<p class="muted">{{ user.empresa_nombre }}</p>
+<div class="kpis">
+  <a class="card kpi" href="/admin/usuarios"><strong>{{ cuentas.usuarios }}</strong><span>personas activas</span></a>
+  <a class="card kpi" href="/admin/usuarios"><strong>{{ cuentas.invitaciones }}</strong><span>invitaciones pendientes</span></a>
+  <a class="card kpi" href="/"><strong>{{ cuentas.proyectos }}</strong><span>proyectos activos</span></a>
+  <a class="card kpi" href="/admin/clientes"><strong>{{ cuentas.clientes }}</strong><span>clientes</span></a>
+</div>
+<div class="grid-2">
+  <div class="card"><h3>Personas</h3><p class="muted">Invitar al equipo y a clientes, activar o quitar acceso, roles.</p><a class="btn small" href="/admin/usuarios">Gestionar</a></div>
+  <div class="card"><h3>Tipos de proyecto</h3><p class="muted">Revit, AutoCAD, SketchUp, Presupuestos… con su agente y plantilla de carpetas.</p><a class="btn small" href="/admin/tipos">Gestionar</a></div>
+  <div class="card"><h3>Proyectos</h3><p class="muted">Dar de alta un proyecto nuevo con código correlativo.</p><a class="btn small" href="/admin/proyectos/nuevo">Nuevo proyecto</a></div>
+  <div class="card"><h3>Registro de actividad</h3><p class="muted">Todo lo que pasa en el sistema, sin posibilidad de borrarlo.</p><a class="btn small" href="/admin/auditoria">Ver</a></div>
+</div>
+{% endblock %}

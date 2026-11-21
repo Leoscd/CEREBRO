@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/
+.pytest_cache/
+*.egg-info/
+spikes/**/.codex-home/
+
+# harness: corridas locales de Codex (memoria episódica, TTL con `harness podar`)
+.harness-runs/
+.claude/settings.local.json

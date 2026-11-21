@@ -1,0 +1,3 @@
+# Migraciones selladas (ya aplicadas en producción o en main). Solo un humano sella:
+# python -m scripts.harness sellar
+0001_base.sql 4b91f3a331d5f67333a596eacd3a6bfe6617a76ddb4b55e5cdd9f8209f76eeed

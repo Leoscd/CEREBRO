@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Nuevo proyecto · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Nuevo proyecto</p>
+<div class="card">
+  <h2>Nuevo proyecto</h2>
+  <p class="muted">El código (PR-año-número) se asigna solo. Vos quedás como director/a.</p>
+  <form method="post" action="/admin/proyectos/nuevo" class="stack ancho">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Tipo de proyecto</label>
+    <select name="tipo_proyecto_id" required>{% for t in tipos %}<option value="{{ t.id }}" {{ 'selected' if t.slug == tipo_sel }}>{{ t.nombre }}</option>{% endfor %}</select>
+    <label>Nombre</label><input name="nombre" required>
+    <label>Cliente</label>
+    <select name="cliente_id"><option value="">— sin cliente —</option>{% for c in clientes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}</select>
+    <label>Descripción</label><textarea name="descripcion" rows="3"></textarea>
+    <label>Dirección</label><input name="direccion">
+    <label>Localidad</label><input name="localidad">
+    <p><button class="btn">Crear proyecto</button></p>
+  </form>
+</div>
+{% endblock %}

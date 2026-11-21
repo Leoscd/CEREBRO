@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Proyectos · {{ marca }}{% endblock %}
+{% block content %}
+<header class="hero">
+  <span class="eyebrow">{{ user.empresa_nombre }}</span>
+  <h1>Hola{{ ', ' ~ user.nombre.split(' ')[0] if user.nombre }}.<br>Tus proyectos, <em>en un solo lugar.</em></h1>
+  <p class="hero-sub">Elegí un tipo de proyecto para ver sus obras, archivos y agentes.</p>
+</header>
+<div class="section-heading"><h2>Tipos de proyecto</h2>
+  {% if user.rol_empresa == 'admin' %}<a class="btn small" href="/admin/proyectos/nuevo">Nuevo proyecto</a>{% endif %}</div>
+<div class="course-grid">
+{% for t in tipos %}
+<a class="course-tile" href="/tipo/{{ t.slug }}">
+  <div class="course-art" aria-hidden="true"><span class="art-label">{{ t.disciplina | upper }} / {{ '%02d' | format(loop.index) }}</span><span class="art-word">{{ t.nombre }}</span><span class="art-play">↗</span></div>
+  <h3>{{ t.nombre }}</h3>
+  <p class="course-summary">{{ t.descripcion or 'Proyectos de este tipo con su agente especializado.' }}</p>
+  <div class="course-meta"><span>{{ t.activos }} activo{{ 's' if t.activos != 1 }} · {{ t.total }} en total</span><strong>Ver proyectos →</strong></div>
+</a>
+{% else %}<p class="muted">Todavía no hay tipos de proyecto. {% if user.rol_empresa == 'admin' %}<a href="/admin/tipos">Crealos desde Administración</a>.{% endif %}</p>{% endfor %}
+</div>
+{% if recientes %}
+<div class="section-heading"><h2>Movimiento reciente</h2></div>
+<table class="tabla">
+  <thead><tr><th>Código</th><th>Proyecto</th><th>Tipo</th><th>Etapa</th><th>Avance</th></tr></thead>
+  <tbody>
+  {% for p in recientes %}
+  <tr><td><a href="/proyecto/{{ p.codigo }}">{{ p.codigo }}</a></td><td>{{ p.nombre }}</td><td>{{ p.tipo_nombre }}</td>
+      <td>{{ ETAPAS[p.etapa] }}</td><td><div class="progressbar mini"><div style="width:{{ p.avance }}%"></div></div> {{ p.avance }}%</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

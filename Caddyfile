@@ -1,0 +1,23 @@
+# DNS: registro A  proyectos.<tu-dominio>  ->  IP pública del VPS. Caddy gestiona el HTTPS.
+proyectos.tudominio.com {
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+    # Subidas de planos y modelos grandes (M1). El resto de los pedidos, chicos.
+    request_body {
+        max_size 1GB
+    }
+    # Panel de plataforma (superadmin, futuro): solo por la red privada.
+    @plataforma path /plataforma /plataforma/*
+    respond @plataforma 404
+
+    reverse_proxy app:8000 {
+        header_up -Tailscale-User-Login
+        header_up -Tailscale-User-Name
+    }
+}

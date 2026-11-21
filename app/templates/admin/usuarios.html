@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Personas · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Personas</p>
+<h1>Personas</h1>
+{% if link == 'enviado' %}<div class="notice">Invitación enviada por email.</div>{% endif %}
+<div class="card">
+  <h3>Invitar</h3>
+  <form method="post" action="/admin/usuarios/invitar" class="fila-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <input type="email" name="email" placeholder="email@ejemplo.com" aria-label="Email" required>
+    <select name="rol_empresa" aria-label="Rol">{% for k, v in ROLES_EMPRESA.items() %}<option value="{{ k }}" {{ 'selected' if k == 'miembro' }}>{{ v }}</option>{% endfor %}</select>
+    <select name="cliente_id" aria-label="Cliente (solo para clientes)"><option value="">— cliente —</option>{% for c in clientes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}</select>
+    <select name="proyecto_id" aria-label="Sumar a un proyecto"><option value="">— sin proyecto —</option>{% for p in proyectos %}<option value="{{ p.id }}">{{ p.codigo }} · {{ p.nombre }}</option>{% endfor %}</select>
+    <select name="rol_proyecto" aria-label="Rol en el proyecto"><option value="">— rol en proyecto —</option>{% for k, v in ROLES_PROYECTO.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+    <button class="btn small">Invitar</button>
+  </form>
+</div>
+{% if pendientes %}
+<div class="card">
+  <h3>Invitaciones pendientes</h3>
+  <table class="tabla"><thead><tr><th>Email</th><th>Rol</th><th>Proyecto</th><th>Vence</th><th></th></tr></thead><tbody>
+  {% for i in pendientes %}
+  <tr><td>{{ i.email }}</td><td>{{ ROLES_EMPRESA[i.rol_empresa] }}</td><td>{{ i.proyecto_codigo or '—' }}</td><td>{{ i.expira_at | solo_fecha }}</td>
+    <td><form method="post" action="/admin/invitacion/{{ i.id }}/cancelar" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}"><button class="btn danger small">Cancelar</button></form></td></tr>
+  {% endfor %}</tbody></table>
+</div>
+{% endif %}
+<table class="tabla">
+  <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Proyectos</th><th>2FA</th><th>Último ingreso</th><th>Acceso</th></tr></thead>
+  <tbody>
+  {% for u in usuarios %}
+  <tr class="{{ '' if u.activo else 'inactivo' }}">
+    <td>{{ u.nombre }}</td><td>{{ u.email }}</td>
+    <td>{% if u.rol_empresa == 'cliente' or u.id == user.id %}{{ ROLES_EMPRESA[u.rol_empresa] }}{% if u.cliente_nombre %} · {{ u.cliente_nombre }}{% endif %}
+      {% else %}<form method="post" action="/admin/usuarios/{{ u.id }}/rol" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <select name="rol_empresa" onchange="this.form.submit()" aria-label="Rol de {{ u.nombre }}">
+          <option value="miembro" {{ 'selected' if u.rol_empresa == 'miembro' }}>Equipo</option>
+          <option value="admin" {{ 'selected' if u.rol_empresa == 'admin' }}>Administrador/a</option></select></form>{% endif %}</td>
+    <td>{{ u.proyectos }}</td>
+    <td>{{ '✔' if u.totp_secret else '—' }}</td>
+    <td>{{ u.ultimo_ingreso | fecha }}</td>
+    <td>{% if u.id != user.id %}<form method="post" action="/admin/usuarios/{{ u.id }}/acceso" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <button class="btn small {{ 'danger' if u.activo else '' }}">{{ 'Quitar acceso' if u.activo else 'Reactivar' }}</button></form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

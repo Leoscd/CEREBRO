@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Crear tu cuenta</h2>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  {% if invitacion %}
+  <p class="muted">Te sumás a <strong>{{ empresa }}</strong> con el email <strong>{{ email }}</strong>.</p>
+  <form method="post" action="/registro" class="stack">
+    <input type="hidden" name="invitacion" value="{{ invitacion }}">
+    <label for="nombre">Tu nombre</label>
+    <input id="nombre" name="nombre" autocomplete="name" required>
+    <label for="pass">Contraseña (mínimo 10 caracteres)</label>
+    <input id="pass" type="password" name="password" autocomplete="new-password" minlength="10" required>
+    <label for="pass2">Repetila</label>
+    <input id="pass2" type="password" name="repetir" autocomplete="new-password" minlength="10" required>
+    <p><button class="btn">Crear cuenta</button></p>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Mi cuenta · {{ marca }}{% endblock %}
+{% block content %}
+<h1>Mi cuenta</h1>
+<div class="grid-2">
+  <div class="card">
+    <h3>Datos</h3>
+    <p><strong>{{ user.nombre }}</strong><br><span class="muted">{{ user.email }}</span></p>
+    <p class="muted">{{ user.empresa_nombre }} · {{ ROLES_EMPRESA[user.rol_empresa] }}</p>
+    <h3>Segundo factor</h3>
+    {% if user.totp_secret %}<p><span class="badge ok">Activo</span></p>
+    {% else %}<p class="muted">Protegé tu cuenta con una app de autenticación.</p><a class="btn small" href="/mi-cuenta/2fa">Activar</a>{% endif %}
+  </div>
+  <div class="card">
+    <h3>Cambiar contraseña</h3>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if ok %}<div class="notice">{{ ok }}</div>{% endif %}
+    <form method="post" action="/mi-cuenta/password" class="stack">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <label for="actual">Contraseña actual</label>
+      <input id="actual" type="password" name="actual" autocomplete="current-password" required>
+      <label for="nueva">Nueva (mínimo 10 caracteres)</label>
+      <input id="nueva" type="password" name="nueva" autocomplete="new-password" minlength="10" required>
+      <label for="repetir">Repetila</label>
+      <input id="repetir" type="password" name="repetir" autocomplete="new-password" minlength="10" required>
+      <p><button class="btn">Cambiar</button></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

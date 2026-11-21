@@ -1,0 +1,8 @@
+# Rutas de escritura que NO pasan por check_csrf. Solo un humano edita este archivo.
+# Formato: archivo.py:funcion  # motivo
+auth.py:login        # previa a la sesión (no hay usuario para firmar el token)
+auth.py:login_2fa    # previa a la sesión completa
+auth.py:register     # alta por invitación, sin sesión
+auth.py:forgot       # recuperación de contraseña, sin sesión
+auth.py:reset        # restablecer contraseña con token del correo
+auth.py:logout       # PENDIENTE: lo corrige T-001; al aprobarla, borrar esta línea

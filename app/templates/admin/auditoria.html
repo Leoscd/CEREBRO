@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Registro de actividad · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Registro de actividad</p>
+<h1>Registro de actividad</h1>
+<p class="muted">Últimos 200 movimientos. Este registro no se puede editar ni borrar.</p>
+<table class="tabla">
+  <thead><tr><th>Fecha</th><th>Quién</th><th>Acción</th><th>Proyecto</th><th>Objeto</th><th>Detalle</th><th>IP</th></tr></thead>
+  <tbody>
+  {% for a in filas %}
+  <tr><td>{{ a.creado_en | fecha }}</td><td>{{ a.usuario_nombre or 'Sistema' }}</td><td>{{ a.accion | replace('_', ' ') }}</td>
+      <td>{% if a.proyecto_codigo %}<a href="/proyecto/{{ a.proyecto_codigo }}">{{ a.proyecto_codigo }}</a>{% else %}—{% endif %}</td>
+      <td>{{ a.objeto }} {{ a.objeto_id }}</td><td class="detalle">{{ a.detalle_txt }}</td><td class="muted">{{ a.ip }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

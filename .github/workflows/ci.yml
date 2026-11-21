@@ -1,0 +1,43 @@
+name: sensores
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sensores:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Puerta de validación (ramas de agentes no tocan el harness)
+        if: github.event_name == 'pull_request'
+        env:
+          RAMA: ${{ github.head_ref }}
+          BASE: origin/${{ github.base_ref }}
+        run: python -m scripts.checks.protegidos --base "$BASE" --rama "$RAMA"
+
+      - name: Sensores rápidos
+        run: python -m scripts.checks.fast
+
+      - name: Pruebas (incluye aislamiento)
+        run: python -m pytest -q

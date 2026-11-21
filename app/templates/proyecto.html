@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ p.codigo }} · {{ p.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/">Proyectos</a> › <a href="/tipo/{{ p.tipo_slug }}">{{ p.tipo_nombre }}</a> › {{ p.codigo }}</p>
+<div class="section-heading">
+  <h1>{{ p.nombre }}</h1>
+  <span><span class="badge {{ p.estado }}">{{ ESTADOS[p.estado] }}</span> <span class="muted">{{ p.codigo }}</span></span>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <h3>Ficha</h3>
+    <dl class="ficha">
+      <dt>Cliente</dt><dd>{{ p.cliente_nombre or '—' }}</dd>
+      <dt>Ubicación</dt><dd>{{ [p.direccion, p.localidad] | select | join(', ') or '—' }}</dd>
+      <dt>Etapa</dt><dd>{{ ETAPAS[p.etapa] }}</dd>
+      <dt>Fechas</dt><dd>{{ p.fecha_inicio | solo_fecha }} → {{ p.fecha_fin_estimada | solo_fecha }}</dd>
+      <dt>Avance</dt><dd><div class="progressbar"><div style="width:{{ p.avance }}%"></div></div> {{ p.avance }}%</dd>
+      <dt>Difusión en redes</dt><dd>{{ 'Autorizada por el cliente' if p.permite_difusion else 'No autorizada' }}</dd>
+      <dt>Mi rol</dt><dd>{{ ROLES_PROYECTO.get(p.mi_rol, 'Administración general' if p.mi_rol == 'admin' else 'Cliente') }}</dd>
+    </dl>
+    {% if p.descripcion %}<p>{{ p.descripcion }}</p>{% endif %}
+    {% if puede_editar %}
+    <details class="editar"><summary>Editar datos</summary>
+      <form method="post" action="/proyecto/{{ p.codigo }}/editar" class="stack">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <label>Nombre</label><input name="nombre" value="{{ p.nombre }}" required>
+        <label>Descripción</label><textarea name="descripcion" rows="3">{{ p.descripcion }}</textarea>
+        <label>Dirección</label><input name="direccion" value="{{ p.direccion }}">
+        <label>Localidad</label><input name="localidad" value="{{ p.localidad }}">
+        <label>Etapa</label><select name="etapa">{% for k, v in ETAPAS.items() %}<option value="{{ k }}" {{ 'selected' if p.etapa == k }}>{{ v }}</option>{% endfor %}</select>
+        <label>Estado</label><select name="estado">{% for k, v in ESTADOS.items() %}<option value="{{ k }}" {{ 'selected' if p.estado == k }}>{{ v }}</option>{% endfor %}</select>
+        <label>Avance (%)</label><input type="number" name="avance" min="0" max="100" value="{{ p.avance }}">
+        <label>Inicio</label><input type="date" name="fecha_inicio" value="{{ p.fecha_inicio or '' }}">
+        <label>Fin estimado</label><input type="date" name="fecha_fin_estimada" value="{{ p.fecha_fin_estimada or '' }}">
+        <label class="check-label"><input type="checkbox" name="permite_difusion" value="1" {{ 'checked' if p.permite_difusion }}> El cliente autoriza usar el proyecto en redes</label>
+        <p><button class="btn">Guardar</button></p>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+
+  <div class="card" id="equipo">
+    <h3>Equipo</h3>
+    <ul class="class-list">
+    {% for m in equipo %}
+      <li><span><strong>{{ m.nombre or m.email }}</strong> <span class="muted">· {{ ROLES_PROYECTO[m.rol] }}{% if m.funcion %} · {{ m.funcion }}{% endif %}</span></span>
+      {% if puede_equipo %}<form method="post" action="/proyecto/{{ p.codigo }}/equipo/{{ m.id }}/quitar" class="inline push">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}"><button class="btn danger small">Quitar</button></form>{% endif %}</li>
+    {% else %}<li class="muted">Sin equipo asignado.</li>{% endfor %}
+    </ul>
+    {% if puede_equipo and candidatos %}
+    <form method="post" action="/proyecto/{{ p.codigo }}/equipo" class="fila-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <select name="usuario_id" aria-label="Persona">{% for c in candidatos %}<option value="{{ c.id }}">{{ c.nombre or c.email }}</option>{% endfor %}</select>
+      <select name="rol" aria-label="Rol">{% for k, v in ROLES_PROYECTO.items() %}<option value="{{ k }}" {{ 'selected' if k == 'colaborador' }}>{{ v }}</option>{% endfor %}</select>
+      <input name="funcion" placeholder="Función (opcional)" aria-label="Función">
+      <button class="btn small">Agregar</button>
+    </form>
+    {% endif %}
+
+    <h3 id="hitos" class="sep">Hitos</h3>
+    <ul class="class-list">
+    {% for h in hitos %}
+      <li><span class="check {{ '' if h.completado else 'pending' }}">{{ '✔' if h.completado else '○' }}</span>
+        <span>{{ h.fecha | solo_fecha }} · {{ h.titulo }}</span>
+        {% if puede_editar %}<form method="post" action="/proyecto/{{ p.codigo }}/hitos/{{ h.id }}/completar" class="inline push">
+          <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}"><button class="btn ghost small">{{ 'Reabrir' if h.completado else 'Completar' }}</button></form>{% endif %}</li>
+    {% else %}<li class="muted">Sin hitos.</li>{% endfor %}
+    </ul>
+    {% if puede_editar %}
+    <form method="post" action="/proyecto/{{ p.codigo }}/hitos" class="fila-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <input name="titulo" placeholder="Nuevo hito" aria-label="Título del hito" required>
+      <input type="date" name="fecha" aria-label="Fecha" required>
+      <label class="check-label"><input type="checkbox" name="visible_cliente" value="1" checked> visible al cliente</label>
+      <button class="btn small">Agregar</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card proximamente">
+  <h3>Archivos y agente del proyecto</h3>
+  <p class="muted">Acá van a estar las fases y carpetas, el visor de archivos y el agente especializado (hito M1).</p>
+</div>
+
+{% if actividad %}
+<div class="card">
+  <h3>Actividad reciente</h3>
+  <ul class="class-list">
+  {% for a in actividad %}<li><span class="muted">{{ a.creado_en | fecha }}</span> <span>{{ a.usuario_nombre or 'Sistema' }} · {{ a.accion | replace('_', ' ') }}</span></li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

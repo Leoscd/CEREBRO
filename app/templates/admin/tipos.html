@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Tipos de proyecto · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Tipos de proyecto</p>
+<h1>Tipos de proyecto</h1>
+<p class="muted">Cada tipo es como un "curso": agrupa proyectos, define su agente especializado, el contexto que recibe y las carpetas con que nace cada proyecto.</p>
+{% macro form_tipo(t) %}
+<form method="post" action="/admin/tipos" class="stack ancho">
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <input type="hidden" name="tipo_id" value="{{ t.id if t else '' }}">
+  <label>Nombre</label><input name="nombre" value="{{ t.nombre if t else '' }}" required>
+  <label>Slug (para la URL)</label><input name="slug" value="{{ t.slug if t else '' }}" pattern="[a-z0-9][a-z0-9\-]{1,40}" required>
+  <label>Descripción</label><input name="descripcion" value="{{ t.descripcion if t else '' }}">
+  <label>Disciplina</label><select name="disciplina">{% for d in disciplinas %}<option value="{{ d }}" {{ 'selected' if t and t.disciplina == d }}>{{ d }}</option>{% endfor %}</select>
+  <label>Agente por defecto</label><input name="agente_slug" value="{{ t.agente_slug if t else 'documentador' }}">
+  <label>Contexto para el agente</label><textarea name="agent_context" rows="4">{{ t.agent_context if t else '' }}</textarea>
+  <label>Plantilla de carpetas (una por línea)</label><textarea name="plantilla_carpetas" rows="5">{{ (t.plantilla_carpetas | join('\n')) if t else '' }}</textarea>
+  <label>Orden</label><input type="number" name="posicion" value="{{ t.posicion if t else 0 }}">
+  <label class="check-label"><input type="checkbox" name="publicado" value="1" {{ 'checked' if not t or t.publicado }}> Visible en el inicio</label>
+  <p><button class="btn small">Guardar</button></p>
+</form>
+{% endmacro %}
+{% for t in tipos %}
+<details class="card">
+  <summary><strong>{{ t.nombre }}</strong> <span class="muted">· {{ t.disciplina }} · agente {{ t.agente_slug }} · {{ t.proyectos }} proyecto{{ 's' if t.proyectos != 1 }}{% if not t.publicado %} · oculto{% endif %}</span></summary>
+  {{ form_tipo(t) }}
+</details>
+{% endfor %}
+<details class="card" {{ 'open' if not tipos }}>
+  <summary><strong>+ Nuevo tipo</strong></summary>
+  {{ form_tipo(None) }}
+</details>
+{% endblock %}

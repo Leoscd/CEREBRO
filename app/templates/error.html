@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ codigo }} · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>{% if codigo == 404 %}No encontrado{% elif codigo == 403 %}Sin permiso{% else %}Algo salió mal{% endif %}</h2>
+  <p>{{ mensaje }}</p>
+  <p><a href="/">Volver al inicio</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Invitación creada · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Invitación creada</h2>
+  <p>No hay correo configurado, así que mandale este link a <strong>{{ email }}</strong> por otro medio.</p>
+  <p class="muted">Se muestra una sola vez: el sistema guarda solo su huella.</p>
+  <input readonly value="{{ link }}" onclick="this.select()" aria-label="Link de invitación">
+  <p><a class="btn small" href="/admin/usuarios">Volver a Personas</a></p>
+</div>
+{% endblock %}

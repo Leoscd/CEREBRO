@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Recuperar contraseña · {{ marca }}{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h2>Recuperar contraseña</h2>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  {% if ok %}<div class="notice">{{ ok }}</div>{% else %}
+  <form method="post" action="/olvide" class="stack">
+    <label for="email">Email de tu cuenta</label>
+    <input id="email" type="email" name="email" autocomplete="email" required autofocus>
+    <p><button class="btn">Mandarme el link</button></p>
+  </form>{% endif %}
+  <p class="muted"><a href="/login">Volver a ingresar</a></p>
+</div>
+{% endblock %}

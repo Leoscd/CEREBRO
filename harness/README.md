@@ -32,6 +32,11 @@ Leo ── pedido ──▶ Claude (planifica)  ──▶ harness/tareas/T-NNN.m
 4. Verde → Claude corre `python -m scripts.harness auditar <PR>` (paquete compacto) y dictamina con la skill `auditar-pr`.
 5. Leo mergea. Si había migración nueva: `python -m scripts.harness sellar`.
 
+**Varias tareas seguidas:** un lote (`harness/lotes/L-NNN-*.md`) fija el orden, las etapas y las PARADAS.
+A Codex: `Ejecutá el lote harness/lotes/L-001-m1.md`. Encadena PRs (cada uno con base en el anterior) y para
+donde dice el lote. Leo habilita la etapa siguiente cambiando `etapa_activa` en una rama `harness/...`.
+Mergear en orden: el primero contra `main`; GitHub re-apunta el siguiente a `main` al borrar la rama mergeada.
+
 ## Los cinco bloques y dónde viven
 1. **Contexto (feedforward):** `AGENTS.md` corto = mapa de punteros. Skills con divulgación progresiva en
    `.agents/skills/` (Codex) y `.claude/skills/` (Claude). La tarea trae punteros, no copias.

@@ -3,13 +3,40 @@ import re
 from pathlib import Path
 
 import pyotp
+import pytest
 
+from app import config
 from tests.conftest import CLAVE, csrf_de, entrar
 
 
 def test_login_incorrecto(app_client, mundo):
     r = app_client().post("/login", data={"email": "ana@a.test", "password": "mala-clave-xx"})
     assert r.status_code == 401
+
+
+@pytest.mark.parametrize("pagina", ["/", "/mi-cuenta"])
+def test_salir_con_formulario_cierra_sesion(mundo, como, pagina):
+    cliente = como("ana@a.test")
+    respuesta = cliente.get(pagina)
+    assert respuesta.status_code == 200
+    formulario = re.search(r'<form\b[^>]*action="/logout"[^>]*>(.*?)</form>', respuesta.text, re.S)
+    assert formulario
+    assert 'method="post"' in formulario[0].split(">", 1)[0]
+    campo = re.search(r'<input\b[^>]*name="csrf"[^>]*value="([^"]+)"', formulario[1])
+    assert campo
+
+    salida = cliente.post("/logout", data={"csrf": campo[1]})
+    assert salida.status_code == 303
+    assert salida.headers["location"] == "/login"
+    assert config.SESSION_COOKIE not in cliente.cookies
+    assert cliente.get("/").status_code == 303
+
+
+@pytest.mark.parametrize("datos", [{}, {"csrf": "invalido"}], ids=["sin-token", "token-invalido"])
+def test_logout_rechazado_conserva_sesion(mundo, como, datos):
+    cliente = como("ana@a.test")
+    assert cliente.post("/logout", data=datos).status_code == 403
+    assert cliente.get("/").status_code == 200
 
 
 def test_invitacion_crea_cuenta_y_suma_al_proyecto(mundo, como, app_client, db):

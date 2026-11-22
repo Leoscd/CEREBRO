@@ -36,6 +36,10 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
 }
 .card h2, .card h3 { margin-top: 0; }
+.carpeta-archivos + .carpeta-archivos { margin-top: 1.25rem; }
+.carpeta-archivos h4 { margin: 0 0 .5rem; }
+.carpeta-archivos li { flex-wrap: wrap; overflow-wrap: anywhere; }
+.carpeta-archivos input[type="file"] { max-width: 100%; }
 
 .btn {
   display: inline-block; padding: 8px 18px; border-radius: 8px;

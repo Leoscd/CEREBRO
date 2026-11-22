@@ -1,7 +1,7 @@
 ---
 id: T-003
 titulo: Subir y bajar archivos
-estado: lista
+estado: en-curso
 rama: codex/T-003-subir-y-bajar-archivos
 creada: 2026-11-21
 depende: T-002
@@ -37,17 +37,20 @@ Que el equipo del proyecto pueda subir archivos a una carpeta desde la ficha y d
   un formulario de subida por carpeta (`enctype="multipart/form-data"`, campo `csrf`).
 
 ## Criterios de aceptación
-- [ ] CA1 Ana sube un archivo a una carpeta de p1 → aparece en la ficha y se descarga con el mismo contenido y nombre.
-- [ ] CA2 Ana intentando subir a p2 → 404; el cliente subiendo a p1 → 403; carpeta de otro proyecto en la URL → 404.
-- [ ] CA3 Descargar un archivo de A siendo admin B → 404; siendo cliente con `visible_cliente=false` → 404.
-- [ ] CA4 Subir dos veces el mismo contenido deja un solo blob en `ALMACEN_DIR` (dos archivos, mismo sha256).
-- [ ] CA5 Nombre `../../etc/passwd` queda como `passwd`; un archivo que supera el máximo → 413 y no queda blob ni fila.
-- [ ] CA6 La subida deja una fila `archivo.subir` en `auditoria`.
-- [ ] CA7 `ALMACEN_DIR` en las pruebas apunta a un directorio temporal (no ensuciar `data/`). Sensores y suite en verde.
+- [x] CA1 Ana sube un archivo a una carpeta de p1 → aparece en la ficha y se descarga con el mismo contenido y nombre.
+- [x] CA2 Ana intentando subir a p2 → 404; el cliente subiendo a p1 → 403; carpeta de otro proyecto en la URL → 404.
+- [x] CA3 Descargar un archivo de A siendo admin B → 404; siendo cliente con `visible_cliente=false` → 404.
+- [x] CA4 Subir dos veces el mismo contenido deja un solo blob en `ALMACEN_DIR` (dos archivos, mismo sha256).
+- [x] CA5 Nombre `../../etc/passwd` queda como `passwd`; un archivo que supera el máximo → 413 y no queda blob ni fila.
+- [x] CA6 La subida deja una fila `archivo.subir` en `auditoria`.
+- [x] CA7 `ALMACEN_DIR` en las pruebas apunta a un directorio temporal (no ensuciar `data/`). Sensores y suite en verde.
 
 ## Fuera de alcance
 - Versiones nuevas, papelera, visibilidad para el cliente (T-004). Vista previa (T-005).
 
 ## Bitácora del ejecutor
+- Los cinco casos fallaron antes del cambio. Pasaron las 41 pruebas y el sensor rápido terminó sin salida.
+- El almacén publica el blob desde un temporal en el mismo volumen y lo identifica por SHA-256. Si una transacción posterior falla, un blob ya publicado puede quedar sin referencia para que se recolecte por separado.
+- La ficha usa el contexto del router de archivos para consultar por proyecto sin una consulta por carpeta.
 
 ## Dictamen del auditor

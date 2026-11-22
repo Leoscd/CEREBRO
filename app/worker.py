@@ -83,14 +83,21 @@ def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
 
 
 def embeber_chunks(db: Connection, empresa_id: int, payload: dict) -> None:
-    filas = db.execute(
-        """SELECT c.id, c.texto FROM chunks c
+    if "biblioteca_id" in payload:
+        filas = db.execute(
+            """SELECT id, texto FROM chunks WHERE empresa_id = %s AND biblioteca_id = %s AND embedding IS NULL
+               ORDER BY id""",
+            (empresa_id, payload["biblioteca_id"]),
+        ).fetchall()
+    else:
+        filas = db.execute(
+            """SELECT c.id, c.texto FROM chunks c
              JOIN archivos a ON a.empresa_id = c.empresa_id AND a.proyecto_id = c.proyecto_id
                             AND a.version_actual_id = c.version_id
             WHERE c.empresa_id = %s AND c.version_id = %s AND c.embedding IS NULL
             ORDER BY c.id""",
-        (empresa_id, payload["version_id"]),
-    ).fetchall()
+            (empresa_id, payload["version_id"]),
+        ).fetchall()
     vectores = embeddings.embeber([fila["texto"] for fila in filas])
     with db.cursor() as cursor:
         cursor.executemany(
@@ -100,10 +107,31 @@ def embeber_chunks(db: Connection, empresa_id: int, payload: dict) -> None:
         )
 
 
+def indexar_biblioteca(db: Connection, empresa_id: int, payload: dict) -> None:
+    documento_id = payload["biblioteca_id"]
+    fila = db.execute(
+        "SELECT sha256 FROM biblioteca_documentos WHERE empresa_id = %s AND id = %s",
+        (empresa_id, documento_id),
+    ).fetchone()
+    if fila is None:
+        return
+    fragmentos = list(texto.fragmentos_pdf(almacen.ruta(fila["sha256"])))
+    db.execute("DELETE FROM chunks WHERE empresa_id = %s AND biblioteca_id = %s", (empresa_id, documento_id))
+    with db.cursor() as cursor:
+        cursor.executemany(
+            """INSERT INTO chunks (empresa_id, biblioteca_id, pagina, orden, texto)
+               VALUES (%s, %s, %s, %s, %s)""",
+            [(empresa_id, documento_id, *fragmento) for fragmento in fragmentos],
+        )
+    if fragmentos:
+        jobs.encolar(db, empresa_id, "chunks.embeber", {"biblioteca_id": documento_id})
+
+
 MANEJADORES = {
     "archivo.analizar": analizar_archivo,
     "archivo.indexar": indexar_archivo,
     "chunks.embeber": embeber_chunks,
+    "biblioteca.indexar": indexar_biblioteca,
 }
 
 

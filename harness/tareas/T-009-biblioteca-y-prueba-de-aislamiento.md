@@ -1,11 +1,11 @@
 ---
 id: T-009
 titulo: Biblioteca de criterios y prueba de aislamiento de M1
-estado: en-curso
+estado: en-revision
 rama: codex/T-009-biblioteca-y-prueba-de-aislamiento
 creada: 2026-11-21
 depende: T-008
-pr:
+pr: "#11"
 ---
 
 ## Objetivo

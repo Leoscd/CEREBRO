@@ -9,7 +9,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from app.db import abrir_pool, cerrar_pool
-from app.services import almacen, jobs, texto
+from app.services import almacen, embeddings, jobs, texto
 
 log = logging.getLogger(__name__)
 
@@ -78,9 +78,33 @@ def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
         """UPDATE versiones_archivo SET derivados = derivados || %s WHERE empresa_id = %s AND id = %s""",
         (Jsonb({"texto": "indexado" if fragmentos else "sin_texto"}), empresa_id, version_id),
     )
+    if fragmentos:
+        jobs.encolar(db, empresa_id, "chunks.embeber", {"version_id": version_id})
 
 
-MANEJADORES = {"archivo.analizar": analizar_archivo, "archivo.indexar": indexar_archivo}
+def embeber_chunks(db: Connection, empresa_id: int, payload: dict) -> None:
+    filas = db.execute(
+        """SELECT c.id, c.texto FROM chunks c
+             JOIN archivos a ON a.empresa_id = c.empresa_id AND a.proyecto_id = c.proyecto_id
+                            AND a.version_actual_id = c.version_id
+            WHERE c.empresa_id = %s AND c.version_id = %s AND c.embedding IS NULL
+            ORDER BY c.id""",
+        (empresa_id, payload["version_id"]),
+    ).fetchall()
+    vectores = embeddings.embeber([fila["texto"] for fila in filas])
+    with db.cursor() as cursor:
+        cursor.executemany(
+            """UPDATE chunks SET embedding = %s::vector
+                WHERE empresa_id = %s AND id = %s AND embedding IS NULL""",
+            [(embeddings.vector_sql(vector), empresa_id, fila["id"]) for fila, vector in zip(filas, vectores, strict=True)],
+        )
+
+
+MANEJADORES = {
+    "archivo.analizar": analizar_archivo,
+    "archivo.indexar": indexar_archivo,
+    "chunks.embeber": embeber_chunks,
+}
 
 
 def procesar_uno(db: Connection) -> bool:

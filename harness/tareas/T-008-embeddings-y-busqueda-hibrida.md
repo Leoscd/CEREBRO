@@ -1,7 +1,7 @@
 ---
 id: T-008
 titulo: Embeddings y búsqueda híbrida
-estado: lista
+estado: en-curso
 rama: codex/T-008-embeddings-y-busqueda-hibrida
 creada: 2026-11-21
 depende: T-007
@@ -33,15 +33,19 @@ antes de comparar vectores.
   **de la misma empresa**, marcados como "Biblioteca". La ruta `/buscar` de T-007 pasa a usar esta función.
 
 ## Criterios de aceptación
-- [ ] CA1 Con el proveedor falso, una consulta con sinónimo/variación encuentra el fragmento que la búsqueda por palabras sola no encuentra (armá el caso a propósito).
-- [ ] CA2 Un chunk de la empresa B con **el mismo vector exacto** que la consulta nunca aparece para A (prueba del filtro previo).
-- [ ] CA3 Chunks de biblioteca aprobados de A aparecen para ana y beto; borradores o retirados, no; los de B, nunca.
-- [ ] CA4 Sin `MODELO_EMBEDDINGS` y proveedor `openai`, `embeber` lanza un error con mensaje que dice qué variable falta.
-- [ ] CA5 Sensores y suite en verde (sin red).
+- [x] CA1 Con el proveedor falso, una consulta con sinónimo/variación encuentra el fragmento que la búsqueda por palabras sola no encuentra (armá el caso a propósito).
+- [x] CA2 Un chunk de la empresa B con **el mismo vector exacto** que la consulta nunca aparece para A (prueba del filtro previo).
+- [x] CA3 Chunks de biblioteca aprobados de A aparecen para ana y beto; borradores o retirados, no; los de B, nunca.
+- [x] CA4 Sin `MODELO_EMBEDDINGS` y proveedor `openai`, `embeber` lanza un error con mensaje que dice qué variable falta.
+- [x] CA5 Sensores y suite en verde (sin red).
 
 ## Fuera de alcance
 - Re-ranking con un modelo. Embeddings de imágenes.
 
 ## Bitácora del ejecutor
+- Los cuatro casos fallaron antes del cambio. Pasaron 62 pruebas y el sensor rápido terminó sin salida; los tests usan el proveedor falso.
+- La búsqueda combina rankings con RRF k=60. La rama vectorial materializa primero las fuentes autorizadas y compara de forma exacta dentro de ese conjunto. El índice HNSW queda instalado.
+- La biblioteca aprobada es interna a cada empresa y se excluye para clientes. Si OpenAI no está configurado o falla al buscar, sigue disponible la búsqueda por palabras.
+- Si cambiás de proveedor o modelo en una base que ya tiene vectores, hay que regenerarlos.
 
 ## Dictamen del auditor

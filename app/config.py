@@ -35,3 +35,6 @@ ALMACEN_DIR = BASE_DIR / os.getenv("ALMACEN_DIR", "data/archivos")
 ARCHIVO_MAX_MB = int(os.getenv("ARCHIVO_MAX_MB", "1024"))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+EMBEDDINGS_PROVEEDOR = os.getenv("EMBEDDINGS_PROVEEDOR", "openai").strip().lower()
+MODELO_EMBEDDINGS = os.getenv("MODELO_EMBEDDINGS", "").strip()
+EMBEDDINGS_DIMENSIONES = int(os.getenv("EMBEDDINGS_DIMENSIONES", "384"))

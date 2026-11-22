@@ -1,11 +1,11 @@
 ---
 id: T-015
 titulo: Verificar el pdf.js vendorizado contra el paquete oficial
-estado: en-curso
+estado: en-revision
 rama: codex/T-015-verificar-pdfjs-vendorizado
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#21"
 ---
 
 ## Objetivo
@@ -31,7 +31,7 @@ paquete oficial `pdfjs-dist@6.5.438` de npm (más de 100 mil líneas que nadie r
 ## Criterios de aceptación
 - [x] CA1 Corrido de verdad (con red) sobre el repo: sin salida y código 0. Anotá en la Bitácora el resultado.
 - [x] CA2 La prueba offline detecta: archivo modificado, archivo de más, `integrity` que no coincide y ruta con `..`.
-- [ ] CA3 El paso de CI "Integridad de vendor" corre y termina en verde.
+- [x] CA3 El paso de CI "Integridad de vendor" corre y termina en verde.
 - [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
@@ -45,6 +45,7 @@ paquete oficial `pdfjs-dist@6.5.438` de npm (más de 100 mil líneas que nadie r
 - Con autorización de Leo se reemplazó únicamente el `pdf.mjs` existente con los bytes de `package/build/pdf.mjs` de npm. La regla `app/static/vendor/** -text` en `.gitattributes` preserva los bytes en Windows y Linux.
 - El tarball se leyó en memoria y su SHA-512 se validó contra el metadato oficial fijado en `ORIGEN.json`. La comprobación final dio **206 de 206** por SHA-256. `python -m scripts.verificar_vendor` terminó sin salida y con código 0.
 - Pasaron las 8 pruebas offline de `tests/test_verificar_vendor.py`. Incluyen archivos faltantes y rutas absolutas POSIX y Windows.
-- El índice de Git conserva los bytes de los 206 archivos verificados. Los sensores rápidos terminaron sin salida y pasó la suite completa, incluidas las pruebas de permisos.
+- El índice de Git y un checkout nuevo con `core.autocrlf=true` conservaron los bytes de los 206 archivos verificados. Los sensores rápidos terminaron sin salida y pasó la suite completa, incluidas las pruebas de permisos.
+- El CI del PR #21 ejecutó y aprobó el paso «Integridad de vendor (pdf.js contra npm)». [Corrida de GitHub Actions](https://github.com/Leoscd/CEREBRO/actions/runs/45085361794)
 
 ## Dictamen del auditor

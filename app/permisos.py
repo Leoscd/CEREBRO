@@ -63,6 +63,29 @@ def obtener_proyecto(db: Connection, u: dict, codigo: str) -> dict:
     return fila
 
 
+def archivos_visibles_sql(u: dict, alias: str = "a") -> tuple[str, list]:
+    """Condición SQL para archivos visibles y fuera de la papelera."""
+    proyectos, params = proyectos_visibles_sql(u)
+    condicion = (
+        f"{alias}.empresa_id = %s AND {alias}.en_papelera_en IS NULL"
+        f" AND EXISTS (SELECT 1 FROM proyectos p WHERE p.id = {alias}.proyecto_id AND {proyectos})"
+    )
+    if es_cliente(u):
+        condicion += f" AND {alias}.visible_cliente"
+    return condicion, [u["empresa_id"], *params]
+
+
+def obtener_archivo(db: Connection, u: dict, archivo_id: int) -> dict:
+    condicion, params = archivos_visibles_sql(u)
+    fila = db.execute(
+        f"SELECT a.* FROM archivos a WHERE a.id = %s AND {condicion}", [archivo_id, *params],
+    ).fetchone()
+    if fila is None:
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    fila["mi_rol"] = "admin" if es_admin(u) else rol_en_proyecto(db, u, fila["proyecto_id"])
+    return fila
+
+
 def puede_crear_proyecto(u: dict) -> bool:
     return es_admin(u)
 

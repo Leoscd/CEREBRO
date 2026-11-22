@@ -20,7 +20,7 @@ def siguiente_codigo(db: Connection, empresa_id: int, anio: int | None = None) -
 def crear_proyecto(db: Connection, usuario: dict, *, tipo_proyecto_id: int, nombre: str,
                    cliente_id: int | None = None, **campos) -> dict:
     tipo = db.execute(
-        "SELECT id FROM tipos_proyecto WHERE id = %s AND empresa_id = %s",
+        "SELECT id, plantilla_carpetas FROM tipos_proyecto WHERE id = %s AND empresa_id = %s",
         (tipo_proyecto_id, usuario["empresa_id"]),
     ).fetchone()
     if not tipo:
@@ -37,6 +37,13 @@ def crear_proyecto(db: Connection, usuario: dict, *, tipo_proyecto_id: int, nomb
     valores = [usuario["empresa_id"], tipo_proyecto_id, codigo, nombre.strip(), cliente_id, usuario["id"],
                *extra.values()]
     marcas = ", ".join(["%s"] * len(valores))
-    return db.execute(
+    proyecto = db.execute(
         f"INSERT INTO proyectos ({', '.join(columnas)}) VALUES ({marcas}) RETURNING *", valores
     ).fetchone()
+    db.cursor().executemany(
+        """INSERT INTO carpetas (empresa_id, proyecto_id, nombre, posicion)
+           VALUES (%s, %s, %s, %s) ON CONFLICT (proyecto_id, padre_id, nombre) DO NOTHING""",
+        [(usuario["empresa_id"], proyecto["id"], nombre_carpeta, posicion)
+         for posicion, nombre_carpeta in enumerate(tipo["plantilla_carpetas"])],
+    )
+    return proyecto

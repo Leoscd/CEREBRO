@@ -1,7 +1,7 @@
 ---
 id: T-002
 titulo: Carpetas y archivos (modelo y permisos)
-estado: lista
+estado: en-curso
 rama: codex/T-002-carpetas-y-archivos-modelo
 creada: 2026-11-21
 depende: —
@@ -39,15 +39,18 @@ archivos y versiones con reglas de visibilidad, todavía sin pantallas.
   - `obtener_archivo(db, u, archivo_id) -> dict` → 404 si no lo ve (con `mi_rol` del proyecto, como `obtener_proyecto`).
 
 ## Criterios de aceptación
-- [ ] CA1 Un proyecto nuevo trae las carpetas de la plantilla de su tipo, en orden.
-- [ ] CA2 Un proyecto existente antes de la migración también las tiene (probalo aplicando la migración sobre datos ya cargados o con una prueba directa de la sentencia).
-- [ ] CA3 Visibilidad (insertando archivos directo en la base): admin A ve los de p1 y p2; ana ve p1 y no p2; el cliente ve solo los `visible_cliente` de p1; admin B no ve ninguno de A.
-- [ ] CA4 `obtener_archivo` de un archivo ajeno o en papelera → 404 (`HTTPException` 404).
-- [ ] CA5 `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] CA1 Un proyecto nuevo trae las carpetas de la plantilla de su tipo, en orden.
+- [x] CA2 Un proyecto existente antes de la migración también las tiene (probalo aplicando la migración sobre datos ya cargados o con una prueba directa de la sentencia).
+- [x] CA3 Visibilidad (insertando archivos directo en la base): admin A ve los de p1 y p2; ana ve p1 y no p2; el cliente ve solo los `visible_cliente` de p1; admin B no ve ninguno de A.
+- [x] CA4 `obtener_archivo` de un archivo ajeno o en papelera → 404 (`HTTPException` 404).
+- [x] CA5 `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
 
 ## Fuera de alcance
 - Subir, bajar, versiones nuevas, papelera desde la interfaz (T-003, T-004).
 
 ## Bitácora del ejecutor
+- La plantilla se copia en la transacción del alta. Si repite un nombre, se conserva su primera posición, tanto al migrar como al crear un proyecto.
+- Las claves foráneas compuestas impiden asociar carpetas, archivos y versiones a otro proyecto o empresa.
+- Los cuatro casos fallaron antes del cambio. Para el retrocompletado se aplicó la migración sobre un proyecto creado con el esquema de M0.
 
 ## Dictamen del auditor

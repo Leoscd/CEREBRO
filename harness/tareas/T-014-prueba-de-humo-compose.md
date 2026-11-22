@@ -1,7 +1,7 @@
 ---
 id: T-014
 titulo: Prueba de humo de docker compose (app + worker)
-estado: en-revision
+estado: hecha
 rama: codex/T-014-prueba-de-humo-compose
 creada: 2026-11-22
 depende: —
@@ -44,3 +44,4 @@ aplican las migraciones y que el worker procesa un trabajo, antes del primer dep
 - GitHub Actions #45078879201 confirmó /salud, todas las migraciones, el PDF analizado y la eliminación del volumen de prueba.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Proyecto Compose aislado y descartable; corrió en Actions: /salud, migraciones y PDF analizado por el worker. Merge: #19.

@@ -1,7 +1,7 @@
 ---
 id: T-011
 titulo: Documentador sin retener la conexión durante la llamada al modelo
-estado: en-revision
+estado: hecha
 rama: codex/T-011-documentador-sin-retener-conexion
 creada: 2026-11-22
 depende: —
@@ -54,3 +54,4 @@ Tres fases, cada una con su conexión corta tomada de `pool()` (`with pool().con
 - Las consultas simultáneas de una misma conversación leen su historial al inicio. El cierre mantiene juntas pregunta y respuesta, por orden de confirmación. La búsqueda híbrida conserva su conexión durante los embeddings que calcula dentro de esa herramienta.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Tres fases con conexiones cortas; la prueba toma todo el pool durante la llamada al modelo; revalida sesión y proyecto al cerrar; run fallido ante error. Nota: el envoltorio local check_csrf motivó H-008. Merge: #16.

@@ -52,6 +52,7 @@ def test_modelo_fijo_y_otro_proveedor(tmp_path, monkeypatch):
 def test_rutas_csrf_y_empresa_id(tmp_path, monkeypatch):
     (tmp_path / "app" / "routers").mkdir(parents=True)
     (tmp_path / "app" / "routers" / "x.py").write_text(
+        "from app.security import check_csrf, require_user\n\n"
         "def _admin(user=Depends(check_csrf)):\n    return user\n\n"
         "@router.post('/a')\ndef bien(user=Depends(_admin)):\n    pass\n\n"
         "@router.post('/b')\ndef sin_csrf(user=Depends(require_user)):\n    pass\n\n"
@@ -60,6 +61,22 @@ def test_rutas_csrf_y_empresa_id(tmp_path, monkeypatch):
     monkeypatch.setattr(fast, "RAIZ", tmp_path)
     monkeypatch.setattr(fast, "POST_SIN_CSRF", tmp_path / "no-existe.txt")
     assert sorted(f.regla for f in fast.sensor_rutas()) == ["aislamiento", "csrf"]
+
+
+def test_csrf_no_se_engana_con_el_nombre(tmp_path, monkeypatch):
+    # H-008: una función local llamada check_csrf que no valida nada no cuenta como CSRF.
+    (tmp_path / "app" / "routers").mkdir(parents=True)
+    (tmp_path / "app" / "routers" / "y.py").write_text(
+        "from app import security\n\n"
+        "def check_csrf(user=Depends(require_user)):\n    return user\n\n"
+        "async def _envoltorio(request, user=Depends(require_user)):\n"
+        "    return await security.check_csrf(request, user)\n\n"
+        "@router.post('/falsa')\ndef falsa(user=Depends(check_csrf)):\n    pass\n\n"
+        "@router.post('/buena')\ndef buena(user=Depends(_envoltorio)):\n    pass\n",
+        encoding="utf-8")
+    monkeypatch.setattr(fast, "RAIZ", tmp_path)
+    monkeypatch.setattr(fast, "POST_SIN_CSRF", tmp_path / "no-existe.txt")
+    assert [f.donde.split()[-1] for f in fast.sensor_rutas()] == ["falsa"]
 
 
 def test_protegidos():

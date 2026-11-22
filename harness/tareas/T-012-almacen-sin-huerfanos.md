@@ -1,7 +1,7 @@
 ---
 id: T-012
 titulo: Almacén sin blobs huérfanos
-estado: en-revision
+estado: hecha
 rama: codex/T-012-almacen-sin-huerfanos
 creada: 2026-11-22
 depende: —
@@ -50,3 +50,4 @@ y tener un comando de limpieza seguro.
 - Publicación y borrado se coordinan por almacén. Reutilizar un blob renueva su antigüedad, y el borrado vuelve a comprobar edad y referencias bajo el bloqueo. Se verificó el comando con un almacén y una base temporales.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Validación sobre el temporal antes de publicar; limpieza global sin filtro de empresa; bloqueo publicación/borrado y renovación de mtime al reutilizar. Merge: #17.

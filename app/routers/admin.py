@@ -4,23 +4,27 @@ import json
 import re
 import secrets
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from app import config
 from app.db import db_dependency
-from app.permisos import ROLES_PROYECTO
+from app.permisos import ROLES_PROYECTO, es_admin, es_cliente
+from app.routers.archivos import _nombre_archivo
 from app.routers.auth import EMAIL_RE, sha256
-from app.security import check_csrf, require_admin
-from app.services import auditoria, correo
+from app.security import check_csrf, require_admin, require_user
+from app.services import almacen, auditoria, correo, jobs, texto
 from app.services.proyectos import crear_proyecto
 from app.templates import ROLES_EMPRESA, templates
 
 router = APIRouter(prefix="/admin")
 
 DISCIPLINAS = ("revit", "autocad", "sketchup", "presupuestos", "obra", "general")
+TIPOS_BIBLIOTECA = {
+    "normativa": "Normativa", "criterio": "Criterio", "pliego": "Pliego", "leccion": "Lección",
+}
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,40}$")
 
 
@@ -28,6 +32,92 @@ def _admin_csrf(request: Request, user=Depends(check_csrf)):
     if user["rol_empresa"] != "admin":
         raise HTTPException(status_code=403, detail="Solo administradores")
     return user
+
+
+@router.get("/biblioteca")
+def biblioteca(request: Request, user=Depends(require_admin), db: Connection = Depends(db_dependency)):
+    documentos = db.execute(
+        """SELECT id, titulo, tipo, version, estado, creado_en FROM biblioteca_documentos
+            WHERE empresa_id = %s ORDER BY creado_en DESC, id DESC""",
+        (user["empresa_id"],),
+    ).fetchall()
+    return templates.TemplateResponse(
+        request, "admin/biblioteca.html",
+        {"user": user, "documentos": documentos, "tipos": TIPOS_BIBLIOTECA},
+    )
+
+
+@router.post("/biblioteca")
+def subir_criterio(
+    request: Request, titulo: str = Form(..., max_length=200), tipo: str = Form(...),
+    version: str = Form(..., max_length=60), archivo: UploadFile = File(...),
+    user=Depends(_admin_csrf), db: Connection = Depends(db_dependency),
+):
+    titulo, version = titulo.strip(), version.strip()
+    if not titulo or not version or tipo not in TIPOS_BIBLIOTECA:
+        raise HTTPException(status_code=400, detail="Completá el título, el tipo y la versión")
+    sha, _ = almacen.guardar(archivo.file)
+    if not texto.es_pdf(almacen.ruta(sha)):
+        raise HTTPException(status_code=400, detail="Adjuntá un PDF válido")
+    fila = db.execute(
+        """INSERT INTO biblioteca_documentos (empresa_id, titulo, tipo, version, sha256, nombre_archivo, subido_por)
+           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+        (user["empresa_id"], titulo, tipo, version, sha, _nombre_archivo(archivo.filename), user["id"]),
+    ).fetchone()
+    jobs.encolar(db, user["empresa_id"], "biblioteca.indexar", {"biblioteca_id": fila["id"]})
+    auditoria.registrar(db, user, "biblioteca.subir", objeto="biblioteca", objeto_id=fila["id"], request=request)
+    db.commit()
+    return RedirectResponse("/admin/biblioteca", status_code=303)
+
+
+def _cambiar_estado_criterio(db: Connection, user: dict, documento_id: int, anterior: str, nuevo: str,
+                            accion: str, request: Request) -> RedirectResponse:
+    empresa_id = user["empresa_id"]
+    fila = db.execute(
+        "SELECT estado FROM biblioteca_documentos WHERE empresa_id = %s AND id = %s FOR UPDATE",
+        (empresa_id, documento_id),
+    ).fetchone()
+    if fila is None:
+        raise HTTPException(status_code=404, detail="Criterio no encontrado")
+    if fila["estado"] != anterior:
+        raise HTTPException(status_code=409, detail="El criterio ya cambió de estado")
+    db.execute(
+        """UPDATE biblioteca_documentos SET estado = %s,
+                  aprobado_por = CASE WHEN %s THEN %s ELSE aprobado_por END,
+                  aprobado_en = CASE WHEN %s THEN now() ELSE aprobado_en END
+            WHERE empresa_id = %s AND id = %s""",
+        (nuevo, nuevo == "aprobado", user["id"], nuevo == "aprobado", empresa_id, documento_id),
+    )
+    auditoria.registrar(db, user, accion, objeto="biblioteca", objeto_id=documento_id, request=request)
+    db.commit()
+    return RedirectResponse("/admin/biblioteca", status_code=303)
+
+
+@router.post("/biblioteca/{documento_id}/aprobar")
+def aprobar_criterio(documento_id: int, request: Request, user=Depends(_admin_csrf),
+                    db: Connection = Depends(db_dependency)):
+    return _cambiar_estado_criterio(db, user, documento_id, "borrador", "aprobado", "biblioteca.aprobar", request)
+
+
+@router.post("/biblioteca/{documento_id}/retirar")
+def retirar_criterio(documento_id: int, request: Request, user=Depends(_admin_csrf),
+                    db: Connection = Depends(db_dependency)):
+    return _cambiar_estado_criterio(db, user, documento_id, "aprobado", "retirado", "biblioteca.retirar", request)
+
+
+@router.get("/biblioteca/{documento_id}/contenido")
+def contenido_criterio(documento_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    fila = db.execute(
+        """SELECT sha256, nombre_archivo FROM biblioteca_documentos
+            WHERE empresa_id = %s AND id = %s AND ((estado = 'aprobado' AND %s) OR %s)""",
+        (user["empresa_id"], documento_id, not es_cliente(user), es_admin(user)),
+    ).fetchone()
+    if fila is None or not (blob := almacen.ruta(fila["sha256"])).is_file():
+        raise HTTPException(status_code=404, detail="Criterio no encontrado")
+    return FileResponse(
+        blob, media_type="application/pdf", filename=fila["nombre_archivo"], content_disposition_type="inline",
+        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"},
+    )
 
 
 @router.get("")

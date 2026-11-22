@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Biblioteca de criterios · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/admin">Administración</a> › Biblioteca</p>
+<h1>Biblioteca de criterios</h1>
+<div class="grid-2">
+  <section class="card">
+    <h2>Subir un criterio</h2>
+    <form method="post" action="/admin/biblioteca" enctype="multipart/form-data" class="stack">
+      <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+      <label for="criterio-titulo">Título</label>
+      <input id="criterio-titulo" name="titulo" maxlength="200" required>
+      <label for="criterio-tipo">Tipo</label>
+      <select id="criterio-tipo" name="tipo">{% for clave, etiqueta in tipos.items() %}<option value="{{ clave }}">{{ etiqueta }}</option>{% endfor %}</select>
+      <label for="criterio-version">Versión</label>
+      <input id="criterio-version" name="version" maxlength="60" required>
+      <label for="criterio-archivo">PDF</label>
+      <input id="criterio-archivo" type="file" name="archivo" accept=".pdf,application/pdf" required>
+      <button class="btn">Subir PDF</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Documentos</h2>
+    {% for doc in documentos %}
+      <article class="sep">
+        <h3><a href="/admin/biblioteca/{{ doc.id }}/contenido">{{ doc.titulo }}</a></h3>
+        <p class="muted">{{ tipos[doc.tipo] }} · Versión {{ doc.version }} · {{ doc.estado | capitalize }} · {{ doc.creado_en | fecha }}</p>
+        {% if doc.estado == 'borrador' or doc.estado == 'aprobado' %}
+          {% set accion = 'aprobar' if doc.estado == 'borrador' else 'retirar' %}
+          <form method="post" action="/admin/biblioteca/{{ doc.id }}/{{ accion }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+            <button class="btn small {{ 'danger' if accion == 'retirar' }}">{{ accion | capitalize }}</button>
+          </form>
+        {% endif %}
+      </article>
+    {% else %}
+      <p class="muted">Todavía no hay documentos.</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -89,6 +89,37 @@
           <li>
             <a href="/archivos/{{ archivo.id }}/descargar">{{ archivo.nombre }}</a>
             <span class="muted">v{{ archivo.numero }} · {{ archivo.tamano_bytes | filesizeformat(true) }} · {{ archivo.creada_en | fecha }}</span>
+            <details>
+              <summary>Historial</summary>
+              <ul class="class-list">
+                {% for version in archivo.historial %}
+                <li><a href="/archivos/{{ archivo.id }}/versiones/{{ version.numero }}/descargar">Descargar v{{ version.numero }}</a>
+                  <span class="muted">{{ version.tamano_bytes | filesizeformat(true) }} · {{ version.creada_en | fecha }}</span>
+                </li>
+                {% endfor %}
+              </ul>
+            </details>
+            {% if puede_subir %}
+              <details>
+                <summary>Nueva versión</summary>
+                <form method="post" action="/archivos/{{ archivo.id }}/versiones" enctype="multipart/form-data" class="fila-form">
+                  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+                  <input type="file" name="archivo" aria-label="Nueva versión de {{ archivo.nombre }}" required>
+                  <button class="btn small">Subir versión</button>
+                </form>
+              </details>
+              <form method="post" action="/archivos/{{ archivo.id }}/papelera">
+                <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+                <button class="btn danger small">A la papelera</button>
+              </form>
+            {% endif %}
+            {% if puede_editar %}
+              <form method="post" action="/archivos/{{ archivo.id }}/visibilidad" class="fila-form">
+                <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+                <label class="check-label"><input type="checkbox" name="visible_cliente" value="1" {{ 'checked' if archivo.visible_cliente }}> Visible al cliente</label>
+                <button class="btn small">Guardar visibilidad</button>
+              </form>
+            {% endif %}
           </li>
         {% else %}
           <li class="muted">Sin archivos.</li>
@@ -106,6 +137,23 @@
   {% else %}
     <p class="muted">Todavía no hay archivos para mostrar.</p>
   {% endfor %}
+  {% if puede_subir %}
+    <details class="sep">
+      <summary>Papelera</summary>
+      <ul class="class-list">
+        {% for archivo in papelera %}
+          <li>{{ archivo.nombre }} <span class="muted">{{ archivo.en_papelera_en | fecha }}</span>
+            <form method="post" action="/archivos/{{ archivo.id }}/restaurar">
+              <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+              <button class="btn small">Restaurar</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="muted">La papelera está vacía.</li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
 </div>
 
 {% if actividad %}

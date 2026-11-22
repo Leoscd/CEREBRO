@@ -1,11 +1,11 @@
 ---
 id: T-004
 titulo: Versiones, papelera y visibilidad para el cliente
-estado: lista
+estado: en-revision
 rama: codex/T-004-versiones-papelera-visibilidad
 creada: 2026-11-21
 depende: T-003
-pr:
+pr: "#5"
 ---
 
 ## Objetivo
@@ -30,16 +30,19 @@ y decidir qué archivos ve el cliente.
   Sección "Papelera" con "Restaurar", visible solo para quien puede escribir.
 
 ## Criterios de aceptación
-- [ ] CA1 Subir versión 2 → la descarga normal trae la 2 y `/versiones/1/descargar` trae la 1 intacta.
-- [ ] CA2 Archivo en papelera: no aparece en la ficha ni se descarga (404) ni lo ve el cliente; restaurado vuelve a verse.
-- [ ] CA3 El cliente no puede subir versiones, mandar a papelera ni cambiar visibilidad (403); ana (colaboradora) no puede cambiar visibilidad (403) pero sí subir versión.
-- [ ] CA4 Marcar `visible_cliente` hace que el cliente lo vea y lo descargue; desmarcarlo → 404 para el cliente.
-- [ ] CA5 Usuario de B sobre cualquiera de estas rutas con ids de A → 404.
-- [ ] CA6 Cada acción deja su fila en `auditoria`. Sensores y suite en verde.
+- [x] CA1 Subir versión 2 → la descarga normal trae la 2 y `/versiones/1/descargar` trae la 1 intacta.
+- [x] CA2 Archivo en papelera: no aparece en la ficha ni se descarga (404) ni lo ve el cliente; restaurado vuelve a verse.
+- [x] CA3 El cliente no puede subir versiones, mandar a papelera ni cambiar visibilidad (403); ana (colaboradora) no puede cambiar visibilidad (403) pero sí subir versión.
+- [x] CA4 Marcar `visible_cliente` hace que el cliente lo vea y lo descargue; desmarcarlo → 404 para el cliente.
+- [x] CA5 Usuario de B sobre cualquiera de estas rutas con ids de A → 404.
+- [x] CA6 Cada acción deja su fila en `auditoria`. Sensores y suite en verde.
 
 ## Fuera de alcance
 - Borrado definitivo y vaciado de papelera. Estados de plano (aprobación) — M posterior.
 
 ## Bitácora del ejecutor
+- Los cuatro casos fallaron antes del cambio. Pasaron 45 pruebas y el sensor rápido terminó sin salida.
+- El bloqueo de la fila del archivo serializa nuevas versiones y cambios de estado. Las acciones conservan el historial y los blobs.
+- Un cliente recibe 403 al intentar escribir en un archivo compartido con él. Para archivos privados, ajenos o en papelera se conserva el 404.
 
 ## Dictamen del auditor

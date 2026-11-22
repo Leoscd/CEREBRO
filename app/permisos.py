@@ -63,22 +63,28 @@ def obtener_proyecto(db: Connection, u: dict, codigo: str) -> dict:
     return fila
 
 
-def archivos_visibles_sql(u: dict, alias: str = "a") -> tuple[str, list]:
-    """Condición SQL para archivos visibles y fuera de la papelera."""
+def archivos_visibles_sql(u: dict, alias: str = "a", *, solo_papelera: bool = False) -> tuple[str, list]:
+    """Condición de visibilidad para archivos activos o de la papelera."""
     proyectos, params = proyectos_visibles_sql(u)
+    estado = "IS NOT NULL" if solo_papelera else "IS NULL"
     condicion = (
-        f"{alias}.empresa_id = %s AND {alias}.en_papelera_en IS NULL"
+        f"{alias}.empresa_id = %s AND {alias}.en_papelera_en {estado}"
         f" AND EXISTS (SELECT 1 FROM proyectos p WHERE p.id = {alias}.proyecto_id AND {proyectos})"
     )
     if es_cliente(u):
-        condicion += f" AND {alias}.visible_cliente"
+        condicion += " AND false" if solo_papelera else f" AND {alias}.visible_cliente"
     return condicion, [u["empresa_id"], *params]
 
 
-def obtener_archivo(db: Connection, u: dict, archivo_id: int) -> dict:
-    condicion, params = archivos_visibles_sql(u)
+def obtener_archivo(db: Connection, u: dict, archivo_id: int, *, solo_papelera: bool = False,
+                    bloquear: bool = False) -> dict:
+    condicion, params = archivos_visibles_sql(u, solo_papelera=solo_papelera)
+    bloqueo = " FOR UPDATE OF a" if bloquear else ""
     fila = db.execute(
-        f"SELECT a.* FROM archivos a WHERE a.id = %s AND {condicion}", [archivo_id, *params],
+        f"""SELECT a.*, p.codigo AS codigo_proyecto
+              FROM archivos a JOIN proyectos p ON p.id = a.proyecto_id AND p.empresa_id = a.empresa_id
+             WHERE a.id = %s AND {condicion}{bloqueo}""",
+        [archivo_id, *params],
     ).fetchone()
     if fila is None:
         raise HTTPException(status_code=404, detail="Archivo no encontrado")

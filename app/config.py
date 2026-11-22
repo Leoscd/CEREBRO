@@ -32,5 +32,6 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 MAIL_FROM = os.getenv("MAIL_FROM", "Gestor de Proyectos <proyectos@example.com>")
 
 ALMACEN_DIR = BASE_DIR / os.getenv("ALMACEN_DIR", "data/archivos")
+ARCHIVO_MAX_MB = int(os.getenv("ARCHIVO_MAX_MB", "1024"))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

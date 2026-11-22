@@ -14,6 +14,7 @@ from app.permisos import (
     puede_gestionar_equipo,
     puede_ver_auditoria,
 )
+from app.routers.archivos import contexto_ficha
 from app.security import check_csrf, require_user
 from app.services import auditoria
 from app.templates import ETAPAS, ESTADOS, templates
@@ -67,6 +68,7 @@ def ficha(codigo: str, request: Request, user=Depends(require_user), db: Connect
             "candidatos": candidatos,
             "puede_editar": puede_editar_proyecto(user, p),
             "puede_equipo": puede_gestionar_equipo(user, p),
+            **contexto_ficha(db, user, p),
         },
     )
 

@@ -79,9 +79,33 @@
   </div>
 </div>
 
-<div class="card proximamente">
-  <h3>Archivos y agente del proyecto</h3>
-  <p class="muted">Acá van a estar las fases y carpetas, el visor de archivos y el agente especializado (hito M1).</p>
+<div class="card" id="archivos">
+  <h3>Archivos</h3>
+  {% for carpeta in carpetas if user.rol_empresa != 'cliente' or archivos_por_carpeta[carpeta.id] %}
+    <section class="carpeta-archivos">
+      <h4>{{ carpeta.nombre }}</h4>
+      <ul class="class-list">
+        {% for archivo in archivos_por_carpeta[carpeta.id] %}
+          <li>
+            <a href="/archivos/{{ archivo.id }}/descargar">{{ archivo.nombre }}</a>
+            <span class="muted">v{{ archivo.numero }} · {{ archivo.tamano_bytes | filesizeformat(true) }} · {{ archivo.creada_en | fecha }}</span>
+          </li>
+        {% else %}
+          <li class="muted">Sin archivos.</li>
+        {% endfor %}
+      </ul>
+      {% if puede_subir %}
+        <form method="post" action="/proyectos/{{ p.codigo }}/carpetas/{{ carpeta.id }}/archivos"
+              enctype="multipart/form-data" class="fila-form">
+          <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+          <input type="file" name="archivo" aria-label="Archivo para {{ carpeta.nombre }}" required>
+          <button class="btn small">Subir archivo</button>
+        </form>
+      {% endif %}
+    </section>
+  {% else %}
+    <p class="muted">Todavía no hay archivos para mostrar.</p>
+  {% endfor %}
 </div>
 
 {% if actividad %}

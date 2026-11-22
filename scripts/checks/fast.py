@@ -193,14 +193,47 @@ def _excepciones_csrf() -> set[str]:
             if ln.split("#", 1)[0].strip()}
 
 
+def _llama_csrf(fn: ast.FunctionDef | ast.AsyncFunctionDef, nombres: set[str]) -> bool:
+    for n in ast.walk(fn):
+        if isinstance(n, ast.Call):
+            f = n.func
+            if isinstance(f, ast.Name) and f.id in nombres:
+                return True
+            if (isinstance(f, ast.Attribute) and f.attr == "check_csrf"
+                    and isinstance(f.value, ast.Name) and f.value.id == "security"):
+                return True
+    return False
+
+
+def _dependencias_csrf(arbol: ast.Module, funcs: list) -> set[str]:
+    """Nombres que de verdad exigen CSRF (H-008: no alcanza con llamarse `check_csrf`).
+
+    Vale el `check_csrf` importado de `app.security` y toda función del archivo que dependa de él
+    (`Depends`) o lo llame (`check_csrf(...)`, `security.check_csrf(...)`). Una función local con ese
+    nombre que no hace nada de eso no cuenta.
+    """
+    importados = {a.asname or a.name for n in ast.walk(arbol)
+                  if isinstance(n, ast.ImportFrom) and n.module == "app.security"
+                  for a in n.names if a.name == "check_csrf"}
+    locales = {fn.name: fn for fn in funcs}
+    con = {nombre for nombre in importados if nombre not in locales}
+    cambio = True
+    while cambio:
+        cambio = False
+        for nombre, fn in locales.items():
+            if nombre not in con and ((_depends(fn) & con) or _llama_csrf(fn, con)):
+                con.add(nombre)
+                cambio = True
+    return con
+
+
 def sensor_rutas() -> list[Falla]:
     fallas = []
     excepciones = _excepciones_csrf()
     for f in sorted((RAIZ / "app" / "routers").glob("*.py")):
         arbol = ast.parse(f.read_text(encoding="utf-8"))
         funcs = [n for n in ast.walk(arbol) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
-        # dependencias que ya exigen CSRF (check_csrf o funciones que dependen de él, un nivel)
-        con_csrf = {"check_csrf"} | {fn.name for fn in funcs if "check_csrf" in _depends(fn)}
+        con_csrf = _dependencias_csrf(arbol, funcs)
         for fn in funcs:
             donde = f"{_rel(f)}:{fn.lineno} {fn.name}"
             if _es_ruta(fn):

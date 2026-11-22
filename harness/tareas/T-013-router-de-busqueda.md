@@ -1,7 +1,7 @@
 ---
 id: T-013
 titulo: Router propio para la búsqueda
-estado: en-revision
+estado: hecha
 rama: codex/T-013-router-de-busqueda
 creada: 2026-11-22
 depende: —
@@ -34,3 +34,4 @@ la búsqueda en su propio router, sin cambiar el comportamiento.
 - Se movió la ruta completa. Pasaron las 73 pruebas existentes sin modificaciones y el sensor rápido terminó sin salida.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Ruta movida a app/routers/busqueda.py sin cambiar lógica; pruebas existentes sin modificar. Merge: #18.

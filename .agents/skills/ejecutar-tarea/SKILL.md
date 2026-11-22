@@ -46,9 +46,9 @@ arreglo con `git merge` (nunca push forzado ni rebase de ramas ya publicadas).
 ## Modo lote (`harness/lotes/L-NNN-*.md`)
 Cuando te pidan "ejecutá el lote L-NNN":
 1. Antes de empezar: `git switch main && git pull`. Leé el lote y ejecutá **solo la etapa activa**, en el orden de la tabla.
-2. Cada tarea va en su rama y su PR. **No esperes la auditoría** entre tareas de la misma etapa: encadenalas.
-   - Si la tarea anterior ya está mergeada en `main`: rama nueva desde `main`, PR contra `main`.
-   - Si todavía no: rama nueva **desde la rama de la anterior** y PR con **base = la rama de la anterior**
+2. Cada tarea va en su rama y su PR. **No esperes la auditoría** entre tareas de la misma etapa.
+   - Si la tarea tiene `depende: —` o su dependencia ya está mergeada en `main`: rama nueva desde `main`, PR contra `main`.
+   - Si depende de una tarea todavía no mergeada: rama nueva **desde la rama de esa tarea** y PR con **base = esa rama**
      (`gh pr create --base codex/T-ANTERIOR-...`), así cada PR muestra solo su diff. En el cuerpo: "Depende de #N".
 3. Antes de abrir cada PR, sensores y suite en verde. Después de abrirlo, esperá el CI; si falla, arreglalo en esa rama.
 4. Respetá las **PARADAS** y los motivos de "parar antes" del lote. Al parar, reportá: tarea · PR · estado de CI · dudas.

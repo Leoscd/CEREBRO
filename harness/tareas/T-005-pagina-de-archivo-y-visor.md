@@ -1,11 +1,11 @@
 ---
 id: T-005
 titulo: Página del archivo con visor de PDF e imágenes
-estado: en-curso
+estado: en-revision
 rama: codex/T-005-pagina-de-archivo-y-visor
 creada: 2026-11-21
 depende: T-004
-pr:
+pr: "#6"
 ---
 
 ## Objetivo

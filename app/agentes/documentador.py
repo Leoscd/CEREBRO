@@ -9,7 +9,6 @@ from app import config
 from app.agentes.herramientas import (
     ContextoDocumentador,
     buscar_documentacion,
-    ids_visibles,
     leer_fragmento,
     listar_archivos,
 )
@@ -82,7 +81,14 @@ async def ejecutar(contexto: ContextoDocumentador, mensajes: list[dict], nombre_
             resultado = await _correr(OpenAIResponsesModel(nombre_modelo, cliente), contexto, mensajes)
 
     salida = resultado.final_output_as(RespuestaDocumentador, raise_if_incorrect_type=True)
-    disponibles = ids_visibles(contexto.db, contexto.usuario, contexto.proyecto, list(contexto.fuentes))
+    uso = resultado.context_wrapper.usage
+    # El SDK conserva las llamadas, pero la sesión no se serializa.
+    estado = resultado.to_state().to_json(context_serializer=lambda _: {}, strict_context=True)
+    return {"salida": salida, "tokens_entrada": uso.input_tokens, "tokens_salida": uso.output_tokens, "estado_sdk": estado}
+
+
+def verificar_respuesta(contexto: ContextoDocumentador, salida: RespuestaDocumentador,
+                        disponibles: set[int]) -> tuple[str, list[dict]]:
     elegidas = [contexto.fuentes[clave] for clave in dict.fromkeys(salida.fuentes) if clave in disponibles]
     citas = []
     respuesta = SIN_FUENTE
@@ -95,8 +101,4 @@ async def ejecutar(contexto: ContextoDocumentador, mensajes: list[dict], nombre_
         referencias = " ".join(f"[{cita['nombre']}, pág. {cita['pagina']}]" for cita in citas)
         respuesta = f"{texto}\n\n{referencias}"
 
-    uso = resultado.context_wrapper.usage
-    # El SDK conserva las llamadas, pero la sesión y la conexión no se serializan.
-    estado = resultado.to_state().to_json(context_serializer=lambda _: {}, strict_context=True)
-    return {"respuesta": respuesta, "citas": citas, "tokens_entrada": uso.input_tokens,
-            "tokens_salida": uso.output_tokens, "estado_sdk": estado}
+    return respuesta, citas

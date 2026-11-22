@@ -1,7 +1,13 @@
 """Panel, ejecución del Agents SDK con modelo falso y persistencia del chat."""
+from contextlib import ExitStack
+
 import pytest
+from agents import AgentsException
 
 from app import config
+from app.agentes import documentador
+from app.agentes.modelo_falso import ModeloFalso
+from app.db import pool
 from tests.conftest import csrf_de
 from tests.test_busqueda import FRASE, procesar_pendientes
 from tests.test_busqueda import pdf_indexable as pdf_indexable
@@ -98,3 +104,70 @@ def test_documentador_exige_csrf_y_explica_modelo_faltante(mundo, como, monkeypa
     assert cliente.post(ruta, json={"mensaje": FRASE}).status_code == 403
     respuesta = cliente.post(ruta, headers={"X-CSRF": csrf_de(mundo["ana"])}, json={"mensaje": FRASE})
     assert respuesta.status_code == 503 and "MODELO_DOCUMENTADOR" in respuesta.json()["detail"]
+
+
+def test_modelo_puede_tomar_todo_el_pool(mundo, como, proveedor_falso, monkeypatch):
+    usuario = mundo["ana"]
+
+    class ModeloQueCompruebaPool(ModeloFalso):
+        async def get_response(self, *args, **kwargs):
+            with ExitStack() as pila:
+                conexiones = [pila.enter_context(pool().connection(timeout=4)) for _ in range(pool().max_size)]
+                fila = conexiones[0].execute(
+                    "SELECT estado FROM agent_runs WHERE empresa_id = %s", (usuario["empresa_id"],),
+                ).fetchone()
+                assert fila == {"estado": "en_curso"}
+            return await super().get_response(*args, **kwargs)
+
+    monkeypatch.setattr(documentador, "crear_modelo_falso", ModeloQueCompruebaPool)
+    respuesta = como("ana@a.test").post(
+        f"/proyectos/{mundo['p1']['codigo']}/documentador",
+        headers={"X-CSRF": csrf_de(usuario)}, json={"mensaje": "Buscá el plano"},
+    )
+    assert respuesta.status_code == 200, respuesta.text
+
+
+def test_fallo_del_modelo_deja_run_fallido_y_503(db, mundo, como, proveedor_falso, monkeypatch):
+    class ModeloQueFalla(ModeloFalso):
+        async def get_response(self, *args, **kwargs):
+            raise AgentsException("Detalle interno del proveedor")
+
+    monkeypatch.setattr(documentador, "crear_modelo_falso", ModeloQueFalla)
+    usuario = mundo["ana"]
+    respuesta = como("ana@a.test").post(
+        f"/proyectos/{mundo['p1']['codigo']}/documentador",
+        headers={"X-CSRF": csrf_de(usuario)}, json={"mensaje": "Buscá el plano"},
+    )
+    assert respuesta.status_code == 503
+    assert "Detalle interno" not in respuesta.text and "Traceback" not in respuesta.text
+    assert db.execute(
+        "SELECT estado FROM agent_runs WHERE empresa_id = %s", (usuario["empresa_id"],),
+    ).fetchall() == [{"estado": "fallido"}]
+    assert db.execute("SELECT 1 FROM mensajes WHERE empresa_id = %s", (usuario["empresa_id"],)).fetchone() is None
+
+
+def test_documentador_descarta_respuesta_si_se_revoca_el_proyecto(
+    db, mundo, como, pdf_indexable, proveedor_falso, monkeypatch,
+):
+    procesar_pendientes(db)
+    usuario, proyecto = mundo["ana"], mundo["p1"]
+
+    class ModeloConRevocacion(ModeloFalso):
+        async def get_response(self, *args, **kwargs):
+            resultado = await super().get_response(*args, **kwargs)
+            if resultado.output[0].type == "message":
+                db.execute("DELETE FROM proyecto_miembros WHERE proyecto_id = %s AND usuario_id = %s",
+                           (proyecto["id"], usuario["id"]))
+                db.commit()
+            return resultado
+
+    monkeypatch.setattr(documentador, "crear_modelo_falso", ModeloConRevocacion)
+    respuesta = como("ana@a.test").post(
+        f"/proyectos/{proyecto['codigo']}/documentador",
+        headers={"X-CSRF": csrf_de(usuario)}, json={"mensaje": FRASE},
+    )
+    assert respuesta.status_code == 404 and FRASE not in respuesta.text
+    assert db.execute("SELECT 1 FROM mensajes WHERE empresa_id = %s", (usuario["empresa_id"],)).fetchone() is None
+    assert db.execute(
+        "SELECT estado FROM agent_runs WHERE empresa_id = %s", (usuario["empresa_id"],),
+    ).fetchall() == [{"estado": "fallido"}]

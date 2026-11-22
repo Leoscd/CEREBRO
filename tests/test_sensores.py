@@ -64,5 +64,5 @@ def test_rutas_csrf_y_empresa_id(tmp_path, monkeypatch):
 
 def test_protegidos():
     assert protegidos.violaciones(["app/main.py", "harness/tareas/T-001.md", "harness/candidatos/C-001.md"]) == []
-    assert protegidos.violaciones(["AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md"]) == [
-        "AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md"]
+    assert protegidos.violaciones(["AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md", "harness/lotes/L-001.md"]) == [
+        "AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md", "harness/lotes/L-001.md"]

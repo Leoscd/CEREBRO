@@ -47,7 +47,7 @@ def _frontmatter(p: Path) -> dict[str, str]:
     for linea in (m.group(1).splitlines() if m else []):
         if ":" in linea:
             k, v = linea.split(":", 1)
-            datos[k.strip()] = v.split("#", 1)[0].strip()
+            datos[k.strip()] = re.sub(r"\s+#.*$", "", v).strip().strip("\"'")
     return datos
 
 

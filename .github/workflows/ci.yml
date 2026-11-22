@@ -41,3 +41,16 @@ jobs:
 
       - name: Pruebas (incluye aislamiento)
         run: python -m pytest -q
+
+      - name: Integridad de vendor (pdf.js contra npm)
+        if: hashFiles('scripts/verificar_vendor.py') != ''
+        run: python -m scripts.verificar_vendor
+
+  humo-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prueba de humo de docker compose
+        if: hashFiles('scripts/probar_compose.sh') != ''
+        run: bash scripts/probar_compose.sh

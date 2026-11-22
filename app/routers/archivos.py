@@ -1,7 +1,7 @@
 """Subida y descarga de archivos del proyecto."""
 import re
 import unicodedata
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
@@ -18,6 +18,7 @@ from app.permisos import (
 )
 from app.security import check_csrf, require_user
 from app.services import almacen, auditoria
+from app.templates import templates
 
 router = APIRouter()
 
@@ -95,13 +96,68 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
     return version["id"]
 
 
-def _respuesta_archivo(archivo: dict, version: dict | None) -> FileResponse:
+def _tipo_de_vista(blob: Path, mime: str, extension: str) -> str | None:
+    firmas = {
+        "application/pdf": (b"%PDF-",),
+        "image/png": (b"\x89PNG\r\n\x1a\n",),
+        "image/jpeg": (b"\xff\xd8\xff",),
+        "image/gif": (b"GIF87a", b"GIF89a"),
+    }
+    if extension in {"svg", "svgz", "html", "htm", "xhtml"}:
+        return None
+    if mime not in firmas and mime != "image/webp":
+        return None
+    try:
+        with blob.open("rb") as stream:
+            cabecera = stream.read(12)
+    except FileNotFoundError:
+        return None
+    if mime == "image/webp":
+        return "imagen" if cabecera.startswith(b"RIFF") and cabecera[8:12] == b"WEBP" else None
+    if cabecera.startswith(firmas[mime]):
+        return "pdf" if mime == "application/pdf" else "imagen"
+    return None
+
+
+def _respuesta_archivo(archivo: dict, version: dict | None, *, previsualizar: bool = False) -> FileResponse:
     if version is None:
         raise HTTPException(status_code=404, detail="Versión no encontrada")
     blob = almacen.ruta(version["sha256"])
     if not blob.is_file():
         raise HTTPException(status_code=404, detail="Archivo no disponible")
-    return FileResponse(blob, media_type=version["mime"], filename=archivo["nombre"])
+    inline = previsualizar and _tipo_de_vista(blob, version["mime"], archivo["extension"]) is not None
+    return FileResponse(
+        blob, media_type=version["mime"], filename=archivo["nombre"],
+        content_disposition_type="inline" if inline else "attachment",
+        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"},
+    )
+
+
+@router.get("/archivos/{archivo_id}")
+def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user),
+                   db: Connection = Depends(db_dependency)):
+    archivo = obtener_archivo(db, user, archivo_id)
+    carpeta = db.execute(
+        "SELECT nombre FROM carpetas WHERE empresa_id = %s AND proyecto_id = %s AND id = %s",
+        (user["empresa_id"], archivo["proyecto_id"], archivo["carpeta_id"]),
+    ).fetchone()
+    version = _obtener_version(db, archivo)
+    historial = db.execute(
+        """SELECT numero, tamano_bytes, creada_en FROM versiones_archivo
+           WHERE empresa_id = %s AND archivo_id = %s ORDER BY numero DESC""",
+        (user["empresa_id"], archivo_id),
+    ).fetchall()
+    tipo = _tipo_de_vista(almacen.ruta(version["sha256"]), version["mime"], archivo["extension"]) if version else None
+    return templates.TemplateResponse(
+        request, "archivo.html",
+        {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial, "tipo": tipo},
+    )
+
+
+@router.get("/archivos/{archivo_id}/contenido")
+def contenido_archivo(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    archivo = obtener_archivo(db, user, archivo_id)
+    return _respuesta_archivo(archivo, _obtener_version(db, archivo), previsualizar=True)
 
 
 @router.post("/proyectos/{codigo}/carpetas/{carpeta_id}/archivos")

@@ -40,6 +40,34 @@ a:hover { text-decoration: underline; }
 .carpeta-archivos h4 { margin: 0 0 .5rem; }
 .carpeta-archivos li { flex-wrap: wrap; overflow-wrap: anywhere; }
 .carpeta-archivos input[type="file"] { max-width: 100%; }
+.titulo-archivo { overflow-wrap: anywhere; }
+.vista-archivo {
+  --ancho-visor: 64%;
+  display: grid;
+  grid-template-columns: minmax(0, var(--ancho-visor)) 14px minmax(0, 1fr);
+  align-items: start;
+}
+.vista-archivo-visor, .vista-archivo-datos { min-width: 0; }
+.vista-archivo-datos { overflow-wrap: anywhere; }
+.divisor-visor {
+  align-self: stretch; cursor: col-resize; touch-action: none;
+  background: linear-gradient(90deg, transparent 42%, currentColor 42% 58%, transparent 58%);
+  opacity: .35;
+}
+.divisor-visor:hover, .divisor-visor:focus-visible { opacity: .75; }
+.herramientas-visor { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .75rem; }
+.herramientas-visor input[type="number"] { width: 4.5rem; }
+.superficie-visor { min-height: 22rem; background: rgba(130, 140, 155, .12); border-radius: .4rem; }
+.superficie-pdf { max-height: 72vh; overflow: auto; padding: .75rem; }
+.superficie-pdf canvas { display: block; margin: 0 auto; background: white; }
+.superficie-imagen { height: min(72vh, 44rem); overflow: hidden; }
+.superficie-imagen img { width: 100%; height: 100%; object-fit: contain; user-select: none; }
+.superficie-imagen.ampliada { cursor: grab; touch-action: none; }
+.superficie-imagen.ampliada:active { cursor: grabbing; }
+@media (max-width: 800px) {
+  .vista-archivo { grid-template-columns: minmax(0, 1fr); }
+  .divisor-visor { display: none; }
+}
 
 .btn {
   display: inline-block; padding: 8px 18px; border-radius: 8px;

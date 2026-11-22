@@ -53,10 +53,12 @@
         <li class="muted">Todavía no hay versiones.</li>
       {% endfor %}
     </ul>
-    <section id="panel-agente" class="sep"><h3>Agente (próximamente)</h3></section>
+    <section id="panel-agente" class="sep" data-ruta="/proyectos/{{ archivo.codigo_proyecto }}/documentador"
+             data-csrf="{{ csrf_token(user.id) }}"><h3>Documentador</h3></section>
   </aside>
 </div>
 {% endblock %}
 {% block scripts %}
 <script type="module" src="/static/archivo.js?v={{ static_version }}"></script>
+<script type="module" src="/static/agente.js?v={{ static_version }}"></script>
 {% endblock %}

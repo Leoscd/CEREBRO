@@ -160,6 +160,9 @@
   {% endif %}
 </div>
 
+<section id="panel-agente" class="card" data-ruta="/proyectos/{{ p.codigo }}/documentador"
+         data-csrf="{{ csrf_token(user.id) }}"><h3>Documentador</h3></section>
+
 {% if actividad %}
 <div class="card">
   <h3>Actividad reciente</h3>
@@ -168,4 +171,7 @@
   </ul>
 </div>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/agente.js?v={{ static_version }}"></script>
 {% endblock %}

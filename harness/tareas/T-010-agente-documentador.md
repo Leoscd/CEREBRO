@@ -1,7 +1,7 @@
 ---
 id: T-010
 titulo: Agente Documentador en el panel
-estado: lista
+estado: en-curso
 rama: codex/T-010-agente-documentador
 creada: 2026-11-21
 depende: T-009
@@ -37,15 +37,19 @@ proyecto y la biblioteca, y reciba respuestas con citas (archivo + página) que 
 - `modelo_falso.py`: implementa la interfaz de modelo del SDK con un guion (llama a `buscar_documentacion` y responde con la cita).
 
 ## Criterios de aceptación
-- [ ] CA1 Con el modelo falso: preguntar por la frase única de p1 → respuesta con cita al archivo y página correctos; quedan filas en las 4 tablas.
-- [ ] CA2 `tests/test_aislamiento_m1.py` suma chat y herramientas: un guion que pide `leer_fragmento` con el id de un chunk de B o de p2 → "no encontrado"; la frase ajena nunca está en la respuesta ni en `tool_calls`.
-- [ ] CA3 Cliente: solo ve citas de archivos `visible_cliente`. Usuario sin acceso al proyecto → 404 en la ruta.
-- [ ] CA4 Sin `MODELO_DOCUMENTADOR` con proveedor `openai` → error claro (503 con mensaje), sin trazas.
-- [ ] CA5 Sensores y suite en verde (sin red). Probado a mano una vez con la clave real si Leo la cargó en `.env` (anotalo; si no, decilo).
+- [x] CA1 Con el modelo falso: preguntar por la frase única de p1 → respuesta con cita al archivo y página correctos; quedan filas en las 4 tablas.
+- [x] CA2 `tests/test_aislamiento_m1.py` suma chat y herramientas: un guion que pide `leer_fragmento` con el id de un chunk de B o de p2 → "no encontrado"; la frase ajena nunca está en la respuesta ni en `tool_calls`.
+- [x] CA3 Cliente: solo ve citas de archivos `visible_cliente`. Usuario sin acceso al proyecto → 404 en la ruta.
+- [x] CA4 Sin `MODELO_DOCUMENTADOR` con proveedor `openai` → error claro (503 con mensaje), sin trazas.
+- [x] CA5 Sensores y suite en verde (sin red). Probado a mano una vez con la clave real si Leo la cargó en `.env` (anotalo; si no, decilo).
 
 ## Fuera de alcance
 - Herramientas que escriben y aprobaciones (`needs_approval`, M2). Streaming. Memoria por resumen entre conversaciones.
 
 ## Bitácora del ejecutor
+- Los cuatro casos fallaron antes del cambio. Pasaron 71 pruebas y el sensor rápido terminó sin salida.
+- El historial tiene una conversación por persona y proyecto. Las herramientas toman su alcance de la sesión. Una cita retirada se excluye del historial visible y del próximo prompt.
+- El Agents SDK 0.22.2 es compatible con FastAPI 0.115 y el cliente OpenAI de T-008. Se guarda el estado del SDK sin serializar la sesión ni la conexión y se desactivan las trazas del proveedor.
+- Chromium con datos demo y proveedor falso confirmó pregunta, historial en ambos paneles y cita que abre el PDF en la página 2. El checkout no tiene .env y la prueba con OpenAI real quedó pendiente.
 
 ## Dictamen del auditor

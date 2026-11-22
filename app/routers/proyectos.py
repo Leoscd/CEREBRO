@@ -1,7 +1,7 @@
 """Ficha del proyecto, edición, equipo e hitos."""
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from psycopg import Connection
 
@@ -16,7 +16,7 @@ from app.permisos import (
 )
 from app.routers.archivos import contexto_ficha
 from app.security import check_csrf, require_user
-from app.services import auditoria, busqueda
+from app.services import auditoria
 from app.templates import ETAPAS, ESTADOS, templates
 
 router = APIRouter(prefix="/proyecto")
@@ -195,18 +195,3 @@ def completar_hito(codigo: str, hito_id: int, request: Request, user=Depends(che
                         request=request)
     db.commit()
     return RedirectResponse(f"/proyecto/{codigo}#hitos", status_code=303)
-
-
-rutas_busqueda = APIRouter()
-rutas_busqueda.include_router(router)
-router = rutas_busqueda
-
-
-@router.get("/proyectos/{codigo}/buscar")
-def buscar(codigo: str, request: Request, q: str = Query("", max_length=500),
-           user=Depends(require_user), db: Connection = Depends(db_dependency)):
-    proyecto = obtener_proyecto(db, user, codigo)
-    resultados = busqueda.buscar(db, user, proyecto, q)
-    return templates.TemplateResponse(
-        request, "buscar.html", {"user": user, "p": proyecto, "q": q, "resultados": resultados},
-    )

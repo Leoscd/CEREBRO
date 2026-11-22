@@ -1,0 +1,6 @@
+{
+  "name": "avance-gsp",
+  "version": "0.1.0",
+  "description": "Barra de avance del proyecto arriba del prompt: porcentaje del plan, dónde estamos trabajando, lo aprobado y lo que falta (lee harness/).",
+  "types": "./types/index.d.ts"
+}

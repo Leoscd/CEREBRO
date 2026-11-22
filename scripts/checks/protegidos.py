@@ -33,6 +33,8 @@ PROTEGIDOS = (
     "harness/log.md",
     "harness/evals/",
     "harness/lotes/",
+    "harness/hitos.md",
+    "herramientas/",
 )
 
 

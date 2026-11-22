@@ -122,7 +122,7 @@ def login_2fa(request: Request, codigo: str = Form(""), db: Connection = Depends
 
 
 @router.post("/logout")
-def logout():
+def logout(_user=Depends(check_csrf)):
     resp = RedirectResponse("/login", status_code=303)
     resp.delete_cookie(config.SESSION_COOKIE)
     return resp

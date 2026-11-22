@@ -1,11 +1,11 @@
 ---
 id: T-008
 titulo: Embeddings y búsqueda híbrida
-estado: en-curso
+estado: en-revision
 rama: codex/T-008-embeddings-y-busqueda-hibrida
 creada: 2026-11-21
 depende: T-007
-pr:
+pr: "#10"
 ---
 
 ## Objetivo

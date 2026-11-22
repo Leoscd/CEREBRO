@@ -1,11 +1,11 @@
 ---
 id: T-013
 titulo: Router propio para la búsqueda
-estado: en-curso
+estado: en-revision
 rama: codex/T-013-router-de-busqueda
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#18"
 ---
 
 ## Objetivo

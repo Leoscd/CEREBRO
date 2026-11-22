@@ -9,7 +9,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from app.db import abrir_pool, cerrar_pool
-from app.services import almacen, jobs
+from app.services import almacen, jobs, texto
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,44 @@ def analizar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
     )
 
 
-MANEJADORES = {"archivo.analizar": analizar_archivo}
+def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
+    version_id = payload["version_id"]
+    archivo = db.execute(
+        """SELECT v.sha256, a.id, a.proyecto_id
+             FROM versiones_archivo v JOIN archivos a ON a.empresa_id = v.empresa_id AND a.id = v.archivo_id
+            WHERE v.empresa_id = %s AND v.id = %s AND a.version_actual_id = v.id""",
+        (empresa_id, version_id),
+    ).fetchone()
+    if archivo is None:
+        return
+    fragmentos = list(texto.fragmentos_pdf(almacen.ruta(archivo["sha256"])))
+    # La versión puede haber cambiado mientras se extraía el texto.
+    vigente = db.execute(
+        """SELECT 1 FROM archivos WHERE empresa_id = %s AND proyecto_id = %s AND id = %s AND version_actual_id = %s
+           FOR UPDATE""",
+        (empresa_id, archivo["proyecto_id"], archivo["id"], version_id),
+    ).fetchone()
+    if vigente is None:
+        return
+    db.execute(
+        """DELETE FROM chunks WHERE empresa_id = %s AND proyecto_id = %s AND version_id IN (
+               SELECT id FROM versiones_archivo WHERE empresa_id = %s AND archivo_id = %s
+           )""",
+        (empresa_id, archivo["proyecto_id"], empresa_id, archivo["id"]),
+    )
+    with db.cursor() as cursor:
+        cursor.executemany(
+            """INSERT INTO chunks (empresa_id, proyecto_id, version_id, pagina, orden, texto)
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            [(empresa_id, archivo["proyecto_id"], version_id, *fragmento) for fragmento in fragmentos],
+        )
+    db.execute(
+        """UPDATE versiones_archivo SET derivados = derivados || %s WHERE empresa_id = %s AND id = %s""",
+        (Jsonb({"texto": "indexado" if fragmentos else "sin_texto"}), empresa_id, version_id),
+    )
+
+
+MANEJADORES = {"archivo.analizar": analizar_archivo, "archivo.indexar": indexar_archivo}
 
 
 def procesar_uno(db: Connection) -> bool:

@@ -81,6 +81,10 @@
 
 <div class="card" id="archivos">
   <h3>Archivos</h3>
+  <form method="get" action="/proyectos/{{ p.codigo }}/buscar" class="fila-form">
+    <input type="search" name="q" maxlength="500" placeholder="Buscar en los documentos" aria-label="Buscar en los documentos" required>
+    <button class="btn small">Buscar</button>
+  </form>
   {% for carpeta in carpetas if user.rol_empresa != 'cliente' or archivos_por_carpeta[carpeta.id] %}
     <section class="carpeta-archivos">
       <h4>{{ carpeta.nombre }}</h4>

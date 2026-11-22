@@ -17,7 +17,7 @@ from app.permisos import (
     puede_escribir_en_proyecto,
 )
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, jobs
+from app.services import almacen, auditoria, jobs, texto
 from app.templates import templates
 
 router = APIRouter()
@@ -94,6 +94,8 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
         (version["id"], mime, user["empresa_id"], archivo_id),
     )
     jobs.encolar(db, user["empresa_id"], "archivo.analizar", {"version_id": version["id"]})
+    if texto.es_pdf(almacen.ruta(sha256)):
+        jobs.encolar(db, user["empresa_id"], "archivo.indexar", {"version_id": version["id"]})
     return version["id"]
 
 

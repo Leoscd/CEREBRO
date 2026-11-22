@@ -56,9 +56,7 @@ def subir_criterio(
     titulo, version = titulo.strip(), version.strip()
     if not titulo or not version or tipo not in TIPOS_BIBLIOTECA:
         raise HTTPException(status_code=400, detail="Completá el título, el tipo y la versión")
-    sha, _ = almacen.guardar(archivo.file)
-    if not texto.es_pdf(almacen.ruta(sha)):
-        raise HTTPException(status_code=400, detail="Adjuntá un PDF válido")
+    sha, _ = almacen.guardar(archivo.file, validar=texto.es_pdf)
     fila = db.execute(
         """INSERT INTO biblioteca_documentos (empresa_id, titulo, tipo, version, sha256, nombre_archivo, subido_por)
            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",

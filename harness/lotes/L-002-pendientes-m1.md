@@ -1,6 +1,7 @@
 ---
 id: L-002
 titulo: Pendientes de la auditoría de M1
+hito: M1
 estado: abierto
 etapa_activa: 1
 ---

@@ -1,11 +1,11 @@
 ---
 id: T-012
 titulo: Almacén sin blobs huérfanos
-estado: lista
+estado: hecha
 rama: codex/T-012-almacen-sin-huerfanos
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#17"
 ---
 
 ## Objetivo
@@ -35,15 +35,19 @@ y tener un comando de limpieza seguro.
 - Documentá en el docstring cómo correrlo en el VPS (`docker compose exec app python -m scripts.limpiar_almacen --borrar`).
 
 ## Criterios de aceptación
-- [ ] CA1 Subir a la biblioteca algo que no es PDF → 400 y **no** queda blob ni temporal.
-- [ ] CA2 Un blob referenciado solo por la empresa B no se borra aunque A no lo use.
-- [ ] CA3 Un blob sin referencias y viejo se lista sin `--borrar` y se borra con `--borrar`; uno sin referencias pero reciente no se toca.
-- [ ] CA4 Un temporal `.subida-*` viejo se borra; uno reciente no.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA1 Subir a la biblioteca algo que no es PDF → 400 y **no** queda blob ni temporal.
+- [x] CA2 Un blob referenciado solo por la empresa B no se borra aunque A no lo use.
+- [x] CA3 Un blob sin referencias y viejo se lista sin `--borrar` y se borra con `--borrar`; uno sin referencias pero reciente no se toca.
+- [x] CA4 Un temporal `.subida-*` viejo se borra; uno reciente no.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Programar el cron en el VPS (lo hace Leo). Borrar versiones o archivos de la papelera.
 
 ## Bitácora del ejecutor
+- Los tres casos nuevos fallaron antes del cambio. Pasaron 76 pruebas y el sensor rápido terminó sin salida.
+- El validador recibe el temporal antes de publicar. La limpieza consulta ambas tablas sin filtrar por empresa y solo considera archivos regulares en las rutas del almacén.
+- Publicación y borrado se coordinan por almacén. Reutilizar un blob renueva su antigüedad, y el borrado vuelve a comprobar edad y referencias bajo el bloqueo. Se verificó el comando con un almacén y una base temporales.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Validación sobre el temporal antes de publicar; limpieza global sin filtro de empresa; bloqueo publicación/borrado y renovación de mtime al reutilizar. Merge: #17.

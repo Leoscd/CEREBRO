@@ -1,24 +1,25 @@
 """Chat del Documentador y su historial por persona y proyecto."""
 import asyncio
+import logging
 
-from agents import AgentsException
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from openai import OpenAIError
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
+from app import security
 from app.agentes import documentador
 from app.agentes.herramientas import ContextoDocumentador, ids_visibles
-from app.db import db_dependency
+from app.db import db_dependency, pool
 from app.permisos import obtener_proyecto
-from app.security import check_csrf, require_user
+from app.security import require_user
 from app.services import auditoria
 
 router = APIRouter(prefix="/proyectos")
 _AGENTE = "documentador"
 _PRIVADO = {"Cache-Control": "private, no-store"}
+log = logging.getLogger(__name__)
 
 
 class Pregunta(BaseModel):
@@ -78,49 +79,81 @@ def _abrir_conversacion(db: Connection, usuario: dict, proyecto: dict, conversac
     return fila["id"]
 
 
-@router.post("/{codigo}/documentador")
-def preguntar_documentador(codigo: str, pregunta: Pregunta, request: Request,
-                           user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
-    proyecto = obtener_proyecto(db, user, codigo)
-    mensaje = pregunta.mensaje.replace("\x00", " ").strip()
-    if not mensaje:
-        raise HTTPException(status_code=400, detail="Escribí una consulta")
-    try:
-        modelo = documentador.modelo_configurado()
-    except documentador.ConfiguracionDocumentador as error:
-        raise HTTPException(status_code=503, detail=str(error)) from None
+def _usuario_documentador(request: Request) -> dict:
+    with pool().connection() as db:
+        return require_user(request, security.get_optional_user(request, db))
 
+
+async def check_csrf(request: Request, user=Depends(_usuario_documentador)) -> dict:
+    """Usa el control CSRF común con la sesión ya leída y la conexión devuelta al pool."""
+    return await security.check_csrf(request, user)
+
+
+def _marcar_fallido(empresa_id: int, conversacion: int, run: int) -> None:
+    with pool().connection() as db:
+        db.execute(
+            """UPDATE agent_runs SET estado = 'fallido'
+                WHERE empresa_id = %s AND conversacion_id = %s AND id = %s AND estado = 'en_curso'""",
+            (empresa_id, conversacion, run),
+        )
+
+
+@router.post("/{codigo}/documentador")
+def preguntar_documentador(codigo: str, pregunta: Pregunta, request: Request, user=Depends(check_csrf)):
+    mensaje = pregunta.mensaje.replace("\x00", " ").strip()
     empresa_id = user["empresa_id"]
-    conversacion = _abrir_conversacion(db, user, proyecto, pregunta.conversacion_id)
-    entrada = [{"role": fila["rol"], "content": fila["contenido"]}
-               for fila in _mensajes(db, user, proyecto, conversacion)[-12:]]
-    entrada.append({"role": "user", "content": mensaje})
-    run = db.execute(
-        """INSERT INTO agent_runs (empresa_id, conversacion_id, modelo, estado)
-           VALUES (%s, %s, %s, 'en_curso') RETURNING id""",
-        (empresa_id, conversacion, modelo),
-    ).fetchone()["id"]
-    contexto = ContextoDocumentador(db, user, proyecto, run)
+    with pool().connection() as db:
+        proyecto = obtener_proyecto(db, user, codigo)
+        if not mensaje:
+            raise HTTPException(status_code=400, detail="Escribí una consulta")
+        try:
+            modelo = documentador.modelo_configurado()
+        except documentador.ConfiguracionDocumentador as error:
+            raise HTTPException(status_code=503, detail=str(error)) from None
+        conversacion = _abrir_conversacion(db, user, proyecto, pregunta.conversacion_id)
+        entrada = [{"role": fila["rol"], "content": fila["contenido"]}
+                   for fila in _mensajes(db, user, proyecto, conversacion)[-12:]]
+        entrada.append({"role": "user", "content": mensaje})
+        run = db.execute(
+            """INSERT INTO agent_runs (empresa_id, conversacion_id, modelo, estado)
+               VALUES (%s, %s, %s, 'en_curso') RETURNING id""",
+            (empresa_id, conversacion, modelo),
+        ).fetchone()["id"]
+
+    contexto = ContextoDocumentador(user, proyecto, run)
     try:
         resultado = asyncio.run(documentador.ejecutar(contexto, entrada, modelo))
-    except (OpenAIError, AgentsException, TimeoutError):
-        db.rollback()
+    except Exception as error:
+        _marcar_fallido(empresa_id, conversacion, run)
+        log.warning("El run %s del Documentador falló (%s)", run, type(error).__name__)
         raise HTTPException(status_code=503, detail="El Documentador no pudo responder. Probá de nuevo.") from None
 
-    obtener_proyecto(db, user, codigo)
-    respuesta, citas = resultado["respuesta"], resultado["citas"]
-    db.execute(
-        """INSERT INTO mensajes (empresa_id, conversacion_id, rol, contenido, citas)
-           VALUES (%s, %s, 'user', %s, '[]'), (%s, %s, 'assistant', %s, %s)""",
-        (empresa_id, conversacion, mensaje, empresa_id, conversacion, respuesta, Jsonb(citas)),
-    )
-    db.execute(
-        """UPDATE agent_runs SET estado = 'hecho', tokens_entrada = %s, tokens_salida = %s, estado_sdk = %s
-            WHERE empresa_id = %s AND conversacion_id = %s AND id = %s""",
-        (resultado["tokens_entrada"], resultado["tokens_salida"], Jsonb(resultado["estado_sdk"]),
-         empresa_id, conversacion, run),
-    )
-    auditoria.registrar(db, user, "agente.consulta", proyecto_id=proyecto["id"], objeto="conversacion",
-                        objeto_id=conversacion, detalle={"agente": _AGENTE, "run_id": run}, request=request)
-    db.commit()
+    try:
+        with pool().connection() as db:
+            actual = security.get_optional_user(request, db)
+            if actual is None or (actual["empresa_id"], actual["id"]) != (empresa_id, user["id"]):
+                raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+            proyecto_actual = obtener_proyecto(db, actual, codigo)
+            if proyecto_actual["id"] != proyecto["id"]:
+                raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+            # Mantiene juntos pregunta y respuesta aunque se cierren dos turnos simultáneos.
+            _abrir_conversacion(db, actual, proyecto_actual, conversacion)
+            disponibles = ids_visibles(db, actual, proyecto_actual, list(contexto.fuentes))
+            respuesta, citas = documentador.verificar_respuesta(contexto, resultado["salida"], disponibles)
+            db.execute(
+                """INSERT INTO mensajes (empresa_id, conversacion_id, rol, contenido, citas)
+                   VALUES (%s, %s, 'user', %s, '[]'), (%s, %s, 'assistant', %s, %s)""",
+                (empresa_id, conversacion, mensaje, empresa_id, conversacion, respuesta, Jsonb(citas)),
+            )
+            db.execute(
+                """UPDATE agent_runs SET estado = 'hecho', tokens_entrada = %s, tokens_salida = %s, estado_sdk = %s
+                    WHERE empresa_id = %s AND conversacion_id = %s AND id = %s""",
+                (resultado["tokens_entrada"], resultado["tokens_salida"], Jsonb(resultado["estado_sdk"]),
+                 empresa_id, conversacion, run),
+            )
+            auditoria.registrar(db, actual, "agente.consulta", proyecto_id=proyecto["id"], objeto="conversacion",
+                                objeto_id=conversacion, detalle={"agente": _AGENTE, "run_id": run}, request=request)
+    except Exception:
+        _marcar_fallido(empresa_id, conversacion, run)
+        raise
     return JSONResponse({"conversacion_id": conversacion, "respuesta": respuesta, "citas": citas}, headers=_PRIVADO)

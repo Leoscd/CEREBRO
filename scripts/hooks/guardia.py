@@ -18,7 +18,7 @@ DENEGAR = [
     (r"\bgit\s+push\b.*(\s--force\b|\s-f\b|\s--force-with-lease\b|\s\+\S)", "push forzado: reescribe historia remota."),
     (r"\bgit\s+reset\s+--hard\b", "git reset --hard descarta trabajo sin vuelta atrás."),
     (r"\bgit\s+clean\s+-\w*f", "git clean -f borra archivos no versionados."),
-    (r"\bgit\s+branch\s+-D\b", "borrar ramas a la fuerza: hacelo a mano si hace falta."),
+    (r"\bgit\s+branch\s+(?-i:-D)\b","borrar ramas a la fuerza: hacelo a mano si hace falta."),
     (r"\brm\s+-\w*r\w*\s+(/|~|\.|\*|app|data|tests|\.git)(\s|$|/)", "borrado recursivo de una carpeta clave."),
     (r"Remove-Item\b.*-Recurse.*\b(app|data|tests|\.git)\b", "borrado recursivo de una carpeta clave."),
     (r"\b(DROP\s+(TABLE|DATABASE|SCHEMA)|TRUNCATE\s+)", "SQL destructivo: los cambios de esquema van en una migración nueva."),

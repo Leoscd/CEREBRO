@@ -66,3 +66,22 @@ def test_protegidos():
     assert protegidos.violaciones(["app/main.py", "harness/tareas/T-001.md", "harness/candidatos/C-001.md"]) == []
     assert protegidos.violaciones(["AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md", "harness/lotes/L-001.md"]) == [
         "AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md", "harness/lotes/L-001.md"]
+
+
+def _guardia(cmd):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+    hook = Path(__file__).resolve().parents[1] / "scripts" / "hooks" / "guardia.py"
+    evento = json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}})
+    salida = subprocess.run([sys.executable, str(hook)], input=evento, capture_output=True, text=True).stdout
+    return json.loads(salida)["hookSpecificOutput"]["permissionDecision"] if salida.strip() else None
+
+
+def test_guardia_distingue_borrado_seguro_de_forzado():
+    # H-005: el patrón ignoraba mayúsculas y bloqueaba también el borrado seguro.
+    assert _guardia("git branch -d rama-mergeada") is None
+    assert _guardia("git branch " + "-D rama") == "deny"
+    assert _guardia("git push " + "--force origin x") == "deny"
+    assert _guardia("gh pr merge 3") == "ask"

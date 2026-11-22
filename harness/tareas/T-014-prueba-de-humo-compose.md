@@ -1,11 +1,11 @@
 ---
 id: T-014
 titulo: Prueba de humo de docker compose (app + worker)
-estado: en-curso
+estado: en-revision
 rama: codex/T-014-prueba-de-humo-compose
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#19"
 ---
 
 ## Objetivo

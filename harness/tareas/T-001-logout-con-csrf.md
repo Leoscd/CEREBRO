@@ -1,7 +1,7 @@
 ---
 id: T-001
 titulo: Logout con CSRF
-estado: en-revision
+estado: hecha
 rama: codex/T-001-logout-con-csrf
 creada: 2026-11-21
 pr: "#1"
@@ -35,3 +35,5 @@ Que cerrar sesión exija el token CSRF, para que otro sitio no pueda desloguear 
 - El sensor rápido terminó sin salida y pasaron las 32 pruebas con PostgreSQL temporal, incluidas las de permisos.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-21). Bloqueantes: ninguno. Alcance respetado (3 archivos), CA con pruebas que
+fallaban antes, reusa `check_csrf`, CI verde. Excepción `auth.py:logout` retirada de `post_sin_csrf.txt`. Merge: Leo (#1).

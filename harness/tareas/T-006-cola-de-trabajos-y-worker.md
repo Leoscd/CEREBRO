@@ -1,11 +1,11 @@
 ---
 id: T-006
 titulo: Cola de trabajos y worker
-estado: en-curso
+estado: en-revision
 rama: codex/T-006-cola-de-trabajos-y-worker
 creada: 2026-11-21
 depende: T-005
-pr:
+pr: "#7"
 ---
 
 ## Objetivo

@@ -1,7 +1,7 @@
 ---
 id: T-007
 titulo: Texto de los PDF e índice por palabras
-estado: lista
+estado: en-curso
 rama: codex/T-007-texto-e-indice-por-palabras
 creada: 2026-11-21
 depende: T-006
@@ -38,15 +38,18 @@ desde la ficha, respetando quién ve qué.
   una frase única en la página 2.
 
 ## Criterios de aceptación
-- [ ] CA1 Subir el PDF de prueba a p1 y correr el worker `--una-vez` → la búsqueda de la frase única devuelve ese archivo, página 2.
-- [ ] CA2 La misma búsqueda como admin B, como ana sobre p2, o como cliente con el archivo no visible → sin resultados (o 404 si el proyecto no es suyo).
-- [ ] CA3 Archivo en papelera → no aparece. Versión nueva sin la frase → la frase ya no aparece.
-- [ ] CA4 Fragmentos: ninguno vacío, ninguno corta una palabra al medio, todos con página ≥ 1.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA1 Subir el PDF de prueba a p1 y correr el worker `--una-vez` → la búsqueda de la frase única devuelve ese archivo, página 2.
+- [x] CA2 La misma búsqueda como admin B, como ana sobre p2, o como cliente con el archivo no visible → sin resultados (o 404 si el proyecto no es suyo).
+- [x] CA3 Archivo en papelera → no aparece. Versión nueva sin la frase → la frase ya no aparece.
+- [x] CA4 Fragmentos: ninguno vacío, ninguno corta una palabra al medio, todos con página ≥ 1.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Embeddings y búsqueda híbrida (T-008). Pantalla de biblioteca (T-009). Office/DXF/IFC como texto.
 
 ## Bitácora del ejecutor
+- Los cuatro casos iniciales fallaron antes de implementar. Pasaron 58 pruebas y el sensor rápido terminó sin salida.
+- Se detecta PDF por cabecera y marcador de final. La migración encola también versiones PDF vigentes preexistentes.
+- El índice y la búsqueda conservan la página. Se valida la versión vigente al escribir y al buscar. Los resaltados escapan el texto extraído antes de insertar las etiquetas mark.
 
 ## Dictamen del auditor

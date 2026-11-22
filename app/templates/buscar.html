@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Buscar documentación · {{ p.nombre }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/proyecto/{{ p.codigo }}#archivos">{{ p.nombre }}</a> › Búsqueda</p>
+<div class="card">
+  <h1>Buscar documentación</h1>
+  <form method="get" action="/proyectos/{{ p.codigo }}/buscar" class="fila-form">
+    <input type="search" name="q" value="{{ q }}" maxlength="500" aria-label="Buscar en los documentos" required>
+    <button class="btn small">Buscar</button>
+  </form>
+</div>
+{% for resultado in resultados %}
+<article class="card">
+  <h3>
+    {% if resultado.biblioteca_id %}
+    <a href="/admin/biblioteca/{{ resultado.biblioteca_id }}/contenido#page={{ resultado.pagina }}">{{ resultado.nombre }} · pág. {{ resultado.pagina }}</a>
+    <span class="badge">Biblioteca</span>
+    {% else %}
+    <a href="/archivos/{{ resultado.archivo_id }}#page={{ resultado.pagina }}">{{ resultado.nombre }} · pág. {{ resultado.pagina }}</a>
+    {% endif %}
+  </h3>
+  <p>{{ resultado.fragmento }}</p>
+</article>
+{% else %}
+{% if q.strip() %}<p class="muted">No encontramos resultados.</p>{% endif %}
+{% endfor %}
+{% endblock %}

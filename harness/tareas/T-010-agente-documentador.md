@@ -1,11 +1,11 @@
 ---
 id: T-010
 titulo: Agente Documentador en el panel
-estado: en-curso
+estado: en-revision
 rama: codex/T-010-agente-documentador
 creada: 2026-11-21
 depende: T-009
-pr:
+pr: "#12"
 ---
 
 ## Objetivo

@@ -1,11 +1,11 @@
 ---
 id: T-012
 titulo: Almacén sin blobs huérfanos
-estado: en-curso
+estado: en-revision
 rama: codex/T-012-almacen-sin-huerfanos
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#17"
 ---
 
 ## Objetivo

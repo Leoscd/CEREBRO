@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ archivo.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="/proyecto/{{ archivo.codigo_proyecto }}#archivos">{{ archivo.codigo_proyecto }}</a> › {{ carpeta.nombre }}</p>
+<h1 class="titulo-archivo">{{ archivo.nombre }}</h1>
+<div class="vista-archivo" id="vista-archivo">
+  <section class="card vista-archivo-visor" aria-label="Visor de archivo">
+    {% if tipo == 'pdf' %}
+      <div id="visor-pdf" data-contenido="/archivos/{{ archivo.id }}/contenido" data-biblioteca="/static/vendor/pdfjs/pdf.mjs">
+        <div class="herramientas-visor">
+          <button type="button" class="btn ghost small" id="pagina-anterior" disabled>Anterior</button>
+          <label>Página <input type="number" id="numero-pagina" min="1" value="1" disabled></label>
+          <span id="total-paginas"></span>
+          <button type="button" class="btn ghost small" id="pagina-siguiente" disabled>Siguiente</button>
+          <button type="button" class="btn ghost small" id="alejar" aria-label="Alejar" disabled>−</button>
+          <button type="button" class="btn ghost small" id="acercar" aria-label="Acercar" disabled>+</button>
+        </div>
+        <p id="estado-pdf" class="muted" role="status">Cargando el PDF…</p>
+        <div class="superficie-visor superficie-pdf" id="pagina-pdf"></div>
+      </div>
+    {% elif tipo == 'imagen' %}
+      <div class="herramientas-visor">
+        <button type="button" class="btn ghost small" id="alejar" aria-label="Alejar" disabled>−</button>
+        <button type="button" class="btn ghost small" id="acercar" aria-label="Acercar">+</button>
+        <button type="button" class="btn ghost small" id="restablecer">Restablecer</button>
+      </div>
+      <div class="superficie-visor superficie-imagen" id="visor-imagen">
+        <img src="/archivos/{{ archivo.id }}/contenido" alt="{{ archivo.nombre }}" draggable="false">
+      </div>
+    {% else %}
+      <p class="muted">Sin vista previa todavía</p>
+      {% if version %}<a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar</a>{% endif %}
+    {% endif %}
+  </section>
+  <div id="divisor-visor" class="divisor-visor" role="separator" aria-label="Ancho del visor"
+       aria-orientation="vertical" aria-valuemin="30" aria-valuemax="76" aria-valuenow="64" tabindex="0"></div>
+  <aside class="card vista-archivo-datos" aria-label="Datos y versiones">
+    <h2>Datos del archivo</h2>
+    <dl class="ficha">
+      <dt>Carpeta</dt><dd>{{ carpeta.nombre }}</dd>
+      {% if version %}
+      <dt>Versión actual</dt><dd>v{{ version.numero }}</dd>
+      <dt>Tamaño</dt><dd>{{ version.tamano_bytes | filesizeformat(true) }}</dd>
+      {% endif %}
+    </dl>
+    {% if version and tipo %}<a class="btn small" href="/archivos/{{ archivo.id }}/descargar">Descargar</a>{% endif %}
+    <h3 class="sep">Historial</h3>
+    <ul class="class-list">
+      {% for anterior in historial %}
+        <li><a href="/archivos/{{ archivo.id }}/versiones/{{ anterior.numero }}/descargar">Descargar v{{ anterior.numero }}</a>
+          <span class="muted">{{ anterior.creada_en | fecha }}</span></li>
+      {% else %}
+        <li class="muted">Todavía no hay versiones.</li>
+      {% endfor %}
+    </ul>
+    <section id="panel-agente" class="sep"><h3>Agente (próximamente)</h3></section>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/archivo.js?v={{ static_version }}"></script>
+{% endblock %}

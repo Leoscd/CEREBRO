@@ -87,7 +87,7 @@
       <ul class="class-list">
         {% for archivo in archivos_por_carpeta[carpeta.id] %}
           <li>
-            <a href="/archivos/{{ archivo.id }}/descargar">{{ archivo.nombre }}</a>
+            <a href="/archivos/{{ archivo.id }}">{{ archivo.nombre }}</a>
             <span class="muted">v{{ archivo.numero }} · {{ archivo.tamano_bytes | filesizeformat(true) }} · {{ archivo.creada_en | fecha }}</span>
             <details>
               <summary>Historial</summary>

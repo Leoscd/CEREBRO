@@ -17,7 +17,7 @@ from app.permisos import (
     puede_escribir_en_proyecto,
 )
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria
+from app.services import almacen, auditoria, jobs
 from app.templates import templates
 
 router = APIRouter()
@@ -93,6 +93,7 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
         "UPDATE archivos SET version_actual_id = %s, mime = %s WHERE empresa_id = %s AND id = %s",
         (version["id"], mime, user["empresa_id"], archivo_id),
     )
+    jobs.encolar(db, user["empresa_id"], "archivo.analizar", {"version_id": version["id"]})
     return version["id"]
 
 

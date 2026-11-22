@@ -1,11 +1,11 @@
 ---
 id: T-006
 titulo: Cola de trabajos y worker
-estado: lista
+estado: en-revision
 rama: codex/T-006-cola-de-trabajos-y-worker
 creada: 2026-11-21
 depende: T-005
-pr:
+pr: "#7"
 ---
 
 ## Objetivo
@@ -35,15 +35,19 @@ sin sumar Redis ni otro servicio.
 - `docker-compose.yml`: servicio `worker` con la misma imagen y `command: python -m app.worker`.
 
 ## Criterios de aceptación
-- [ ] CA1 Subir un PDF encola `archivo.analizar`; `--una-vez` lo procesa y `derivados.meta.mime_real` = `application/pdf`.
-- [ ] CA2 Un manejador que lanza excepción reintenta y queda 'fallido' con el error al agotar `max_intentos`.
-- [ ] CA3 Dos conexiones tomando a la vez nunca obtienen el mismo trabajo.
-- [ ] CA4 Un trabajo abandonado en 'en_curso' vuelve a tomarse.
-- [ ] CA5 Si falla la subida (p. ej. 413), no queda trabajo encolado (misma transacción). Sensores y suite en verde.
+- [x] CA1 Subir un PDF encola `archivo.analizar`; `--una-vez` lo procesa y `derivados.meta.mime_real` = `application/pdf`.
+- [x] CA2 Un manejador que lanza excepción reintenta y queda 'fallido' con el error al agotar `max_intentos`.
+- [x] CA3 Dos conexiones tomando a la vez nunca obtienen el mismo trabajo.
+- [x] CA4 Un trabajo abandonado en 'en_curso' vuelve a tomarse.
+- [x] CA5 Si falla la subida (p. ej. 413), no queda trabajo encolado (misma transacción). Sensores y suite en verde.
 
 ## Fuera de alcance
 - Texto e índices (T-007). Miniaturas de imágenes. Panel de trabajos en la interfaz.
 
 ## Bitácora del ejecutor
+- Los seis casos fallaron antes del cambio. Pasaron 54 pruebas y el sensor rápido terminó sin salida.
+- La subida y el encolado se confirman juntos. Las reservas vencidas consumen un intento y un worker anterior no puede confirmar una reserva recuperada.
+- El análisis guarda tamaño real y MIME por firma. DOCX, XLSX y PPTX comparten firma y se registran como application/zip.
+- Se probó el worker como proceso con PostgreSQL real y se validó la estructura de Compose. Queda por verificar el arranque en Docker.
 
 ## Dictamen del auditor

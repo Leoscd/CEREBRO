@@ -1,7 +1,7 @@
 # Gestor de proyectos · VPS (8 vCPU / 32 GB / 400 GB)
-#   docker compose up -d                     app + postgres
+#   docker compose up -d                     app + postgres + worker
 #   docker compose --profile dominio up -d   + Caddy con HTTPS
-# ONLYOFFICE, Gotenberg y el worker se suman en M1.
+# ONLYOFFICE y Gotenberg se suman en M1.
 x-endurecido: &endurecido
   restart: unless-stopped
   security_opt: ["no-new-privileges:true"]
@@ -34,8 +34,10 @@ services:
   app:
     <<: *endurecido
     build: .
+    image: &imagen_gsp ${COMPOSE_PROJECT_NAME:-gsp}-app:local
+    pull_policy: never
     env_file: .env
-    environment:
+    environment: &entorno_gsp
       DATABASE_URL: postgresql://gsp:${POSTGRES_PASSWORD}@postgres:5432/gsp
       DATA_DIR: data
     read_only: true
@@ -55,6 +57,22 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  worker:
+    <<: *endurecido
+    image: *imagen_gsp
+    pull_policy: never
+    command: python -m app.worker
+    env_file: .env
+    environment: *entorno_gsp
+    read_only: true
+    tmpfs: ["/tmp"]
+    volumes:
+      - ./data/archivos:/srv/app/data/archivos:ro
+    depends_on:
+      app: { condition: service_healthy }
+    mem_limit: 1g
+    pids_limit: 128
 
   caddy:
     <<: *endurecido

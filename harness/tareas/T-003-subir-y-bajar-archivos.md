@@ -1,11 +1,11 @@
 ---
 id: T-003
 titulo: Subir y bajar archivos
-estado: en-curso
+estado: en-revision
 rama: codex/T-003-subir-y-bajar-archivos
 creada: 2026-11-21
 depende: T-002
-pr:
+pr: "#4"
 ---
 
 ## Objetivo

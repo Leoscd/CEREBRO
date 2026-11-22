@@ -1,7 +1,7 @@
 ---
 id: T-008
 titulo: Embeddings y búsqueda híbrida
-estado: en-revision
+estado: hecha
 rama: codex/T-008-embeddings-y-busqueda-hibrida
 creada: 2026-11-21
 depende: T-007
@@ -49,3 +49,4 @@ antes de comparar vectores.
 - Si cambiás de proveedor o modelo en una base que ya tiene vectores, hay que regenerarlos.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). CTE MATERIALIZED garantiza el filtro previo (probado con vector idéntico de otra empresa); no usa HNSW: revisar si crece la biblioteca. Merge: #10.

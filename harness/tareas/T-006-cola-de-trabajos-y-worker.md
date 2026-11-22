@@ -1,7 +1,7 @@
 ---
 id: T-006
 titulo: Cola de trabajos y worker
-estado: en-revision
+estado: hecha
 rama: codex/T-006-cola-de-trabajos-y-worker
 creada: 2026-11-21
 depende: T-005
@@ -51,3 +51,4 @@ sin sumar Redis ni otro servicio.
 - Se probó el worker como proceso con PostgreSQL real y se validó la estructura de Compose. Queda por verificar el arranque en Docker.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). SKIP LOCKED + huella de reserva; manejador filtra por empresa; worker monta archivos en solo lectura. Pendiente: probar arranque en Docker. Merge: #7.

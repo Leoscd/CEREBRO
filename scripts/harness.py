@@ -169,6 +169,14 @@ def _prioridad(ruta: str) -> int:
     return len(SENSIBLES) + (0 if ruta.startswith("tests/") else 1)
 
 
+def rutas_tocar(texto: str) -> list[str]:
+    """Rutas entre backticks de "- Tocar:" hasta "- No tocar:" (puede ocupar varios renglones). H-006."""
+    bloque = re.search(r"^- Tocar:(.*?)(?=^- No tocar:|^## |\Z)", texto, re.M | re.S)
+    if not bloque:
+        return []
+    return [r for r in re.findall(r"`([^`]+)`", bloque.group(1)) if "/" in r or "." in r]
+
+
 def cmd_auditar(args) -> None:
     campos = "number,title,headRefName,baseRefName,body,files,statusCheckRollup,additions,deletions,isDraft"
     pr = json.loads(subprocess.run(["gh", "pr", "view", str(args.pr), "--json", campos], cwd=RAIZ,
@@ -188,8 +196,7 @@ def cmd_auditar(args) -> None:
         texto = tarea.read_text(encoding="utf-8")
         texto = texto.split("## Dictamen del auditor")[0]
         print(f"## Tarea ({tarea.relative_to(RAIZ).as_posix()})\n{texto.strip()}\n")
-        linea = re.search(r"^- Tocar:(.*)$", texto, re.M)
-        tocar = re.findall(r"`([^`]+)`", linea.group(1)) if linea else []
+        tocar = rutas_tocar(texto)
     else:
         print("## Tarea\n- El PR no menciona T-NNN: pedile a Codex que la enlace.\n")
 

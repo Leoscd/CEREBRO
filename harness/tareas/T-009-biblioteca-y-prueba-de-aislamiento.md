@@ -1,7 +1,7 @@
 ---
 id: T-009
 titulo: Biblioteca de criterios y prueba de aislamiento de M1
-estado: en-revision
+estado: hecha
 rama: codex/T-009-biblioteca-y-prueba-de-aislamiento
 creada: 2026-11-21
 depende: T-008
@@ -47,3 +47,4 @@ los proyectos de su empresa, y dejar escrita la prueba de aislamiento que exige 
 - Se verificaron búsqueda HTTP y directa, ficha, página, contenido y descargas por ID. Los derivados se comprueban detrás del permiso de archivo y la URL directa devuelve 404.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Prueba de aislamiento M1 completa (3 perfiles, todos los caminos, ids correlativos). Menor: blob huérfano si el archivo no es PDF. Merge: #11.

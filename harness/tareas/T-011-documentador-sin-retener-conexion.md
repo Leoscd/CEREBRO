@@ -1,11 +1,11 @@
 ---
 id: T-011
 titulo: Documentador sin retener la conexión durante la llamada al modelo
-estado: en-curso
+estado: en-revision
 rama: codex/T-011-documentador-sin-retener-conexion
 creada: 2026-11-22
 depende: —
-pr:
+pr: "#16"
 ---
 
 ## Objetivo

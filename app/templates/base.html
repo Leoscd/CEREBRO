@@ -15,7 +15,10 @@
       <a href="/">Proyectos</a>
       {% if user.rol_empresa == 'admin' %}<a href="/admin">Administración</a>{% endif %}
       <a class="muted" href="/mi-cuenta">{{ user.nombre or user.email }}</a>
-      <form method="post" action="/logout" class="inline"><button class="btn ghost small">Salir</button></form>
+      <form method="post" action="/logout" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <button class="btn ghost small">Salir</button>
+      </form>
     {% endif %}
   </nav>
 </header>

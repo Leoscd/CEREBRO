@@ -1,11 +1,11 @@
 ---
 id: T-007
 titulo: Texto de los PDF e índice por palabras
-estado: en-curso
+estado: en-revision
 rama: codex/T-007-texto-e-indice-por-palabras
 creada: 2026-11-21
 depende: T-006
-pr:
+pr: "#9"
 ---
 
 ## Objetivo

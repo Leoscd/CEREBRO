@@ -1,7 +1,7 @@
 ---
 id: T-003
 titulo: Subir y bajar archivos
-estado: en-revision
+estado: hecha
 rama: codex/T-003-subir-y-bajar-archivos
 creada: 2026-11-21
 depende: T-002
@@ -54,3 +54,4 @@ Que el equipo del proyecto pueda subir archivos a una carpeta desde la ficha y d
 - La ficha usa el contexto del router de archivos para consultar por proyecto sin una consulta por carpeta.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Almacén atómico por contenido, nombres saneados, 413 sin restos. Pendiente: limpieza de blobs huérfanos. Merge: #4.

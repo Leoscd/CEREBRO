@@ -1,3 +1,8 @@
 # Migraciones selladas (ya aplicadas en producción o en main). Solo un humano sella:
 # python -m scripts.harness sellar
 0001_base.sql 4b91f3a331d5f67333a596eacd3a6bfe6617a76ddb4b55e5cdd9f8209f76eeed
+0002_archivos.sql a15bc9e2a2ef8c3580fa4abf6b114e6c3209a04193a9742d1341b857877e5fe7
+0003_jobs.sql 1202dc4143edbd4c2e3e04100e689feb7d911ae0acd9f7407a38f4d19a55b7d2
+0004_rag.sql 1745c18e76a7a72948da14165fde857b459b9c9515b6814f7864cf84adfcd9c7
+0005_indice_vectorial.sql 348e41ac4e88bbbe96fb14b0698b9953b7869ccdd8a006b7436777d0aa47f85b
+0006_agentes.sql 30e4e14ebd99d833fef7e1eab0854b2254e19e49ab150b218b2863624e256acd

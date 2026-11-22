@@ -1,7 +1,7 @@
 ---
 id: T-010
 titulo: Agente Documentador en el panel
-estado: en-revision
+estado: hecha
 rama: codex/T-010-agente-documentador
 creada: 2026-11-21
 depende: T-009
@@ -53,3 +53,4 @@ proyecto y la biblioteca, y reciba respuestas con citas (archivo + página) que 
 - Chromium con datos demo y proveedor falso confirmó pregunta, historial en ambos paneles y cita que abre el PDF en la página 2. El checkout no tiene .env y la prueba con OpenAI real quedó pendiente.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Citas armadas por el servidor desde ids revalidados; herramientas con contexto de sesión; panel con textContent. Pendiente: no retener conexión/transacción durante la llamada al modelo. Merge: #12.

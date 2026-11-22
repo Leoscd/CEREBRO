@@ -35,7 +35,10 @@ Leo ── pedido ──▶ Claude (planifica)  ──▶ harness/tareas/T-NNN.m
 **Varias tareas seguidas:** un lote (`harness/lotes/L-NNN-*.md`) fija el orden, las etapas y las PARADAS.
 A Codex: `Ejecutá el lote harness/lotes/L-001-m1.md`. Encadena PRs (cada uno con base en el anterior) y para
 donde dice el lote. Leo habilita la etapa siguiente cambiando `etapa_activa` en una rama `harness/...`.
-Mergear en orden: el primero contra `main`; GitHub re-apunta el siguiente a `main` al borrar la rama mergeada.
+Mergear en orden con **merge común** (no squash: el siguiente PR chocaría con su propio código aplastado) y
+**sin borrar ramas** hasta el final: borrar la base de un PR abierto por la API lo **cierra** (H-007).
+Por cada PR: re-apuntarlo a `main` (`gh pr edit N --base main`) → mergeable → `gh pr merge N --merge`.
+Al terminar, borrar las ramas que ya estén contenidas en `main`.
 
 ## Los cinco bloques y dónde viven
 1. **Contexto (feedforward):** `AGENTS.md` corto = mapa de punteros. Skills con divulgación progresiva en

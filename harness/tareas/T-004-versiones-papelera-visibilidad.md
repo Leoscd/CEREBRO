@@ -1,7 +1,7 @@
 ---
 id: T-004
 titulo: Versiones, papelera y visibilidad para el cliente
-estado: en-revision
+estado: hecha
 rama: codex/T-004-versiones-papelera-visibilidad
 creada: 2026-11-21
 depende: T-003
@@ -46,3 +46,4 @@ y decidir qué archivos ve el cliente.
 - Un cliente recibe 403 al intentar escribir en un archivo compartido con él. Para archivos privados, ajenos o en papelera se conserva el 404.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). FOR UPDATE antes de numerar versión; papelera vedada al cliente en SQL; auditoría verificada en orden. Merge: #5.

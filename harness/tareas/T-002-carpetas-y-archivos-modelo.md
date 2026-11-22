@@ -1,7 +1,7 @@
 ---
 id: T-002
 titulo: Carpetas y archivos (modelo y permisos)
-estado: en-revision
+estado: hecha
 rama: codex/T-002-carpetas-y-archivos-modelo
 creada: 2026-11-21
 depende: —
@@ -54,3 +54,4 @@ archivos y versiones con reglas de visibilidad, todavía sin pantallas.
 - Los cuatro casos fallaron antes del cambio. Para el retrocompletado se aplicó la migración sobre un proyecto creado con el esquema de M0.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Claves foráneas compuestas por empresa; visibilidad reusa proyectos_visibles_sql; 4 roles probados. Merge: #3.

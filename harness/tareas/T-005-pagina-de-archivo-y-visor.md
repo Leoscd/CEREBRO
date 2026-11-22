@@ -1,7 +1,7 @@
 ---
 id: T-005
 titulo: Página del archivo con visor de PDF e imágenes
-estado: en-revision
+estado: hecha
 rama: codex/T-005-pagina-de-archivo-y-visor
 creada: 2026-11-21
 depende: T-004
@@ -50,3 +50,4 @@ derecha, el panel donde después va a vivir el agente (por ahora: datos y versio
 - Los tres casos HTTP fallaron antes del cambio. Pasaron 48 pruebas y el sensor rápido terminó sin salida.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Inline solo si la firma coincide con el MIME; pdf.js 6.5.438 local con isEvalSupported=false. Prueba manual en bitácora. Merge: #6.

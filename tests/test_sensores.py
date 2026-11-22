@@ -85,3 +85,11 @@ def test_guardia_distingue_borrado_seguro_de_forzado():
     assert _guardia("git branch " + "-D rama") == "deny"
     assert _guardia("git push " + "--force origin x") == "deny"
     assert _guardia("gh pr merge 3") == "ask"
+
+
+def test_rutas_tocar_multilinea():
+    # H-006: la lista "Tocar" de una tarea puede seguir en el renglón siguiente.
+    from scripts.harness import rutas_tocar
+    texto = ("## Alcance\n- Tocar: `app/a.py`, `app/b.py` (solo `ficha`),\n  `tests/test_c.py`.\n"
+             "- No tocar: `app/permisos.py`.\n")
+    assert rutas_tocar(texto) == ["app/a.py", "app/b.py", "tests/test_c.py"]

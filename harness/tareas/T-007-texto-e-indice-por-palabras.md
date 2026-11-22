@@ -1,7 +1,7 @@
 ---
 id: T-007
 titulo: Texto de los PDF e índice por palabras
-estado: en-revision
+estado: hecha
 rama: codex/T-007-texto-e-indice-por-palabras
 creada: 2026-11-21
 depende: T-006
@@ -53,3 +53,4 @@ desde la ficha, respetando quién ve qué.
 - El índice y la búsqueda conservan la página. Se valida la versión vigente al escribir y al buscar. Los resaltados escapan el texto extraído antes de insertar las etiquetas mark.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-22). Filtro de acceso en el WHERE, resaltado escapado, revalida versión vigente con bloqueo. Calidad: ruta /buscar agregada reemplazando el router. Merge: #9.

@@ -1,7 +1,7 @@
 ---
 id: T-015
 titulo: Verificar el pdf.js vendorizado contra el paquete oficial
-estado: lista
+estado: en-curso
 rama: codex/T-015-verificar-pdfjs-vendorizado
 creada: 2026-11-22
 depende: —
@@ -38,5 +38,8 @@ paquete oficial `pdfjs-dist@6.5.438` de npm (más de 100 mil líneas que nadie r
 - Actualizar pdf.js de versión.
 
 ## Bitácora del ejecutor
+- Se verificó el SHA-512 del tarball oficial de npm contra su metadato y se compararon los 206 archivos en un checkout con los finales LF de Git. Coincidieron 205.
+- El único archivo distinto fue `pdf.mjs` frente a `package/build/pdf.mjs`. SHA-256 local: `f1ee2b86d34109a9d3475b23f26882e1c8df38e051a74e4f1e8fd72c9a51885a`. SHA-256 npm: `cbabeebf4df66f3fe736f2fa2792d332e019a878b0aa88d5e2be17d439079de4`.
+- Parada de L-002 aplicada por la diferencia de bytes. Quedaron pendientes el manifiesto, el verificador y su paso de CI. Los archivos vendorizados se conservaron tal como están en Git.
 
 ## Dictamen del auditor

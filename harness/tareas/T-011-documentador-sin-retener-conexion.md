@@ -1,7 +1,7 @@
 ---
 id: T-011
 titulo: Documentador sin retener la conexión durante la llamada al modelo
-estado: lista
+estado: en-curso
 rama: codex/T-011-documentador-sin-retener-conexion
 creada: 2026-11-22
 depende: —
@@ -36,18 +36,21 @@ Tres fases, cada una con su conexión corta tomada de `pool()` (`with pool().con
 - La ruta deja de depender de `db_dependency` para la fase 2 (puede usarla para la 1 si la libera antes; lo más simple es no usarla).
 
 ## Criterios de aceptación
-- [ ] CA1 Con el modelo falso, mientras corre la fase 2 **no hay ninguna conexión del pool tomada por el pedido**
+- [x] CA1 Con el modelo falso, mientras corre la fase 2 **no hay ninguna conexión del pool tomada por el pedido**
       (probalo con un modelo falso que, dentro de `get_response`, verifique `pool().get_stats()` o que pueda tomar
       todas las conexiones del pool sin bloquear).
-- [ ] CA2 Un error del modelo deja el `agent_run` en `fallido` y responde 503 sin traza.
-- [ ] CA3 Siguen pasando `tests/test_documentador.py` y `tests/test_aislamiento_m1.py` sin cambiar sus expectativas
+- [x] CA2 Un error del modelo deja el `agent_run` en `fallido` y responde 503 sin traza.
+- [x] CA3 Siguen pasando `tests/test_documentador.py` y `tests/test_aislamiento_m1.py` sin cambiar sus expectativas
       (citas verificadas, ids ajenos "no encontrado", 404 sin acceso).
-- [ ] CA4 Si el usuario pierde acceso al proyecto entre la fase 1 y la 3, no se guarda la respuesta y se responde 404.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA4 Si el usuario pierde acceso al proyecto entre la fase 1 y la 3, no se guarda la respuesta y se responde 404.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Streaming. Mover el agente a la cola de trabajos.
 
 ## Bitácora del ejecutor
+- Los tres casos nuevos fallaron en la implementación anterior. Pasaron 76 pruebas y el sensor rápido terminó sin salida.
+- La dependencia local ejecuta el control CSRF común con una sesión leída en una conexión corta. Las herramientas confirman sus registros en conexiones propias y el cierre vuelve a validar sesión, proyecto y fuentes.
+- Las consultas simultáneas de una misma conversación leen su historial al inicio. El cierre mantiene juntas pregunta y respuesta, por orden de confirmación. La búsqueda híbrida conserva su conexión durante los embeddings que calcula dentro de esa herramienta.
 
 ## Dictamen del auditor

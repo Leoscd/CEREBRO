@@ -1,11 +1,11 @@
 ---
 id: T-002
 titulo: Carpetas y archivos (modelo y permisos)
-estado: en-curso
+estado: en-revision
 rama: codex/T-002-carpetas-y-archivos-modelo
 creada: 2026-11-21
 depende: —
-pr:
+pr: "#3"
 ---
 
 ## Objetivo

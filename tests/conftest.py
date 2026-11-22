@@ -29,6 +29,8 @@ def _url_admin() -> str:
 URL_ADMIN = _url_admin()
 os.environ["DATABASE_URL"] = URL_ADMIN  # antes de importar app.config
 os.environ.setdefault("SECRET_KEY", "test-secret")
+os.environ["EMBEDDINGS_PROVEEDOR"] = "falso"
+os.environ["EMBEDDINGS_DIMENSIONES"] = "384"
 
 
 def _con_db(url: str, nombre: str) -> str:

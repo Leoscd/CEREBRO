@@ -1,7 +1,7 @@
 ---
 id: T-014
 titulo: Prueba de humo de docker compose (app + worker)
-estado: lista
+estado: en-curso
 rama: codex/T-014-prueba-de-humo-compose
 creada: 2026-11-22
 depende: —
@@ -31,13 +31,16 @@ aplican las migraciones y que el worker procesa un trabajo, antes del primer dep
 
 ## Criterios de aceptación
 - [ ] CA1 En el CI del PR, el paso "Prueba de humo de docker compose" corre y termina en verde.
-- [ ] CA2 Si el worker no puede leer el almacén (montaje `:ro`) o falla la migración, el script falla con un mensaje claro y los logs.
-- [ ] CA3 `.env.ci` no contiene nada que parezca una clave real.
-- [ ] CA4 Sensores y suite en verde.
+- [x] CA2 Si el worker no puede leer el almacén (montaje `:ro`) o falla la migración, el script falla con un mensaje claro y los logs.
+- [x] CA3 `.env.ci` no contiene nada que parezca una clave real.
+- [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Caddy y HTTPS (perfil `dominio`). Deploy real al VPS.
 
 ## Bitácora del ejecutor
+- La prueba crea un proyecto Compose temporal con credenciales ficticias, un volumen de Postgres descartable y los bind mounts de app y worker aislados.
+- Git Bash verificó la sintaxis. Un simulador de Docker confirmó los mensajes, los logs y down -v ante fallas de migración y del worker. Pasaron las 73 pruebas y el sensor rápido terminó sin salida.
+- La ejecución real de Compose se verifica en GitHub Actions porque esta PC no tiene Docker.
 
 ## Dictamen del auditor

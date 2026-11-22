@@ -1,11 +1,11 @@
 ---
 id: T-004
 titulo: Versiones, papelera y visibilidad para el cliente
-estado: en-curso
+estado: en-revision
 rama: codex/T-004-versiones-papelera-visibilidad
 creada: 2026-11-21
 depende: T-003
-pr:
+pr: "#5"
 ---
 
 ## Objetivo

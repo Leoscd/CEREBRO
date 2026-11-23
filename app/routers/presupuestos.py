@@ -4,15 +4,15 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import RedirectResponse, Response
 from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, proyectos_visibles_sql, puede_editar_presupuesto
 from app.security import check_csrf, require_user
-from app.services import auditoria, dinero, presupuestos, verificador
+from app.services import auditoria, dinero, excel, presupuestos, verificador
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -207,3 +207,71 @@ def nueva_version(presupuesto_id: int, request: Request, user=Depends(check_csrf
     nuevo = presupuestos.nueva_version(db, user, presupuesto, request=request)
     db.commit()
     return RedirectResponse(f"/presupuestos/{nuevo}", 303)
+
+
+def _archivo_excel(contenido, nombre):
+    return Response(contenido, media_type=excel.TIPO_EXCEL,
+                    headers={"Content-Disposition": f'attachment; filename="{nombre}"', "Cache-Control": "private, no-store"})
+
+
+@router.get(_DETALLE + ".xlsx")
+def exportar_excel(presupuesto_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    _obtener(db, user, presupuesto_id)
+    calculo = presupuestos.calcular(db, user["empresa_id"], presupuesto_id)
+    return _archivo_excel(excel.exportar(calculo), f"presupuesto-{presupuesto_id}.xlsx")
+
+
+@router.get(_DETALLE + "/excel/plantilla.xlsx")
+def plantilla_items_excel(presupuesto_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    _obtener(db, user, presupuesto_id)
+    return _archivo_excel(excel.plantilla(excel.COLUMNAS_ITEMS), "plantilla-items.xlsx")
+
+
+@router.post(_DETALLE + "/excel/vista-previa")
+def vista_previa_excel(presupuesto_id: int, request: Request, archivo: UploadFile = File(),
+                      user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    _editable(db, user, presupuesto_id)
+    try:
+        contenido = excel.subir(archivo)
+        filas = excel.filas_items(db, user["empresa_id"], contenido)
+    except excel.ExcelInvalido as error:
+        raise HTTPException(error.estado, str(error)) from error
+    destino = f"/presupuestos/{presupuesto_id}"
+    confirmacion = None if any("error" in f for f in filas) else excel.firmar(contenido, user, destino, filas)
+    return templates.TemplateResponse(request, "excel_previa.html", {
+        "user": user, "filas": filas, "destino": destino, "confirmacion": confirmacion, "titulo": "Importar ítems",
+    }, headers={"Cache-Control": "private, no-store"})
+
+
+@router.post(_DETALLE + "/excel/confirmar")
+def confirmar_excel(presupuesto_id: int, request: Request,
+                    confirmacion: str = Form(max_length=excel.MAX_CONFIRMACION),
+                    user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    presupuesto = _editable(db, user, presupuesto_id)
+    destino = f"/presupuestos/{presupuesto_id}"
+    empresa = user["empresa_id"]
+    try:
+        contenido, huella = excel.abrir_confirmacion(confirmacion, user, destino)
+        filas = excel.filas_items(db, empresa, contenido)
+        excel.comprobar_filas(filas, huella)
+    except excel.ExcelInvalido as error:
+        raise HTTPException(error.estado, str(error)) from error
+    if any("error" in f for f in filas):
+        return templates.TemplateResponse(request, "excel_previa.html", {
+            "user": user, "filas": filas, "destino": destino, "confirmacion": None, "titulo": "Importar ítems",
+        }, status_code=409, headers={"Cache-Control": "private, no-store"})
+    rubros = {r["nombre"]: r["id"] for r in db.execute(
+        "SELECT id,nombre FROM rubros_presupuesto WHERE empresa_id=%s AND presupuesto_id=%s",
+        (empresa, presupuesto_id),
+    )}
+    for fila in filas:
+        datos = fila["datos"]
+        nombre = datos["rubro"]
+        if nombre not in rubros:
+            rubros[nombre] = presupuestos.agregar_rubro(db, user, presupuesto, nombre, request=request)
+        if presupuestos.guardar_item(
+            db, user, presupuesto, datos | {"rubro_id": rubros[nombre]}, request=request,
+        ) is None:
+            raise HTTPException(409, f"Fila {fila['numero']}: el rubro o APU ya no está disponible.")
+    db.commit()
+    return RedirectResponse(destino, 303)

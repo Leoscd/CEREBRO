@@ -1,11 +1,11 @@
 ---
 id: T-022
 titulo: Aprobaciones para herramientas que escriben (pausar y retomar)
-estado: en-curso
+estado: en-revision
 rama: codex/T-022-aprobaciones-de-agentes
 creada: 2026-11-23
 depende: T-021
-pr:
+pr: "#31"
 ---
 
 ## Objetivo

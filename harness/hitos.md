@@ -12,7 +12,7 @@ Lo lee la barra de avance (mod `avance-gsp`) para calcular el porcentaje del pro
 | S0 | Spike de riesgo de Codex (app-server, Revit, AutoCAD) | 0.8 | pendiente |
 | M0 | Fundaciones (auth, permisos, proyectos, auditoría, deploy) | 1.5 | hecho |
 | M1 | Archivos, visores, RAG de dos niveles y Documentador | 2.5 | en-curso |
-| M2 | Presupuestos y precios | 3.5 | pendiente |
+| M2 | Presupuestos y precios | 3.5 | en-curso |
 | M3 | Seguimiento de obra | 2.5 | pendiente |
 | M4 | Conector y sesiones de trabajo | 3.5 | pendiente |
 | M5 | Redes y Gerencia | 2.0 | pendiente |

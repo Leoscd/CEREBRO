@@ -12,7 +12,7 @@ from psycopg.errors import UniqueViolation
 from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, proyectos_visibles_sql, puede_editar_presupuesto
 from app.security import check_csrf, require_user
-from app.services import auditoria, dinero, presupuestos
+from app.services import auditoria, dinero, presupuestos, verificador
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -118,6 +118,11 @@ def crear(codigo: str, request: Request, user=Depends(check_csrf), ficha=Depends
 @router.get(_DETALLE)
 def detalle(presupuesto_id: int, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
     presupuesto, proyecto = _obtener(db, user, presupuesto_id)
+    calculo = presupuestos.calcular(db, user["empresa_id"], presupuesto_id)
+    return _mostrar_detalle(request, user, db, presupuesto, proyecto, calculo, verificador.analizar_calculo(calculo))
+
+
+def _mostrar_detalle(request, user, db, presupuesto, proyecto, calculo, hallazgos, *, status_code=200):
     editar = puede_editar_presupuesto(user, proyecto)
     apus = db.execute(
         "SELECT id,codigo,descripcion,activo FROM apus WHERE empresa_id=%s ORDER BY codigo",
@@ -125,8 +130,8 @@ def detalle(presupuesto_id: int, request: Request, user=Depends(require_user), d
     ).fetchall() if editar and presupuesto["estado"] == "borrador" else []
     return templates.TemplateResponse(request, "presupuesto.html", {
         "user": user, "proyecto": proyecto, "editar": editar, "apus": apus,
-        "calculo": presupuestos.calcular(db, user["empresa_id"], presupuesto_id),
-    })
+        "calculo": calculo, "hallazgos": hallazgos,
+    }, status_code=status_code)
 
 
 @router.post(_DETALLE + "/editar")
@@ -180,6 +185,12 @@ def editar_item(presupuesto_id: int, item_id: int, request: Request, user=Depend
 def emitir(presupuesto_id: int, request: Request, user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
     presupuesto = _editable(db, user, presupuesto_id)
     resultado = presupuestos.calcular(db, user["empresa_id"], presupuesto_id)
+    hallazgos = verificador.analizar_calculo(resultado)
+    if any(h["severidad"] == "error" for h in hallazgos):
+        if request.headers.get("x-csrf") or request.headers.get("accept", "").startswith("application/json"):
+            raise HTTPException(409, hallazgos)
+        proyecto = obtener_proyecto(db, user, presupuesto["codigo_proyecto"])
+        return _mostrar_detalle(request, user, db, presupuesto, proyecto, resultado, hallazgos, status_code=409)
     try:
         presupuestos.emitir(db, user, presupuesto, resultado, request=request)
     except ValueError as error:

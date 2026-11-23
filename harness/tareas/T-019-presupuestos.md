@@ -1,11 +1,11 @@
 ---
 id: T-019
 titulo: Presupuestos del proyecto (rubros, ítems y totales al centavo)
-estado: en-curso
+estado: en-revision
 rama: codex/T-019-presupuestos
 creada: 2026-11-23
 depende: T-018
-pr:
+pr: "#28"
 ---
 
 ## Objetivo

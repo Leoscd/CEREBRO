@@ -6,9 +6,10 @@ from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessa
 
 
 class ModeloFalso(Model):
-    def __init__(self, herramienta: str = "buscar_documentacion", argumentos: dict | None = None):
+    def __init__(self, herramienta: str = "buscar_documentacion", argumentos: dict | None = None, *, responder=None):
         self.herramienta = herramienta
         self.argumentos = argumentos
+        self.responder = responder
 
     async def get_response(self, system_instructions, input, model_settings, tools, output_schema, handoffs, tracing,
                            *, previous_response_id, conversation_id, prompt):
@@ -25,12 +26,16 @@ class ModeloFalso(Model):
         else:
             if isinstance(resultado, list):
                 resultado = "".join(item.get("text", "") for item in resultado)
-            fuentes = json.loads(resultado).get("fuentes", [])
-            respuesta = ("No lo encontré en la documentación." if not fuentes else fuentes[0]["texto"])
-            datos = {"respuesta": respuesta, "fuentes": [fuentes[0]["id"]] if fuentes else []}
+            if self.responder is None:
+                fuentes = json.loads(resultado).get("fuentes", [])
+                respuesta = ("No lo encontré en la documentación." if not fuentes else fuentes[0]["texto"])
+                datos = {"respuesta": respuesta, "fuentes": [fuentes[0]["id"]] if fuentes else []}
+                texto = json.dumps(datos, ensure_ascii=False)
+            else:
+                texto = self.responder(resultado)
             salida = ResponseOutputMessage(
                 id="msg_guion_documentador", role="assistant", status="completed", type="message",
-                content=[ResponseOutputText(type="output_text", text=json.dumps(datos, ensure_ascii=False), annotations=[])],
+                content=[ResponseOutputText(type="output_text", text=texto, annotations=[])],
             )
         return ModelResponse(output=[salida], usage=Usage(requests=1, input_tokens=12, output_tokens=6, total_tokens=18),
                              response_id=None)

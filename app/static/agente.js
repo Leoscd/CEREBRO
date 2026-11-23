@@ -15,12 +15,13 @@ const consulta = formulario.querySelector("textarea");
 const boton = formulario.querySelector("button");
 const estado = panel.querySelector("[role=status]");
 let conversacion;
+let esperaAprobacion = false;
 
 function mostrar(rol, contenido, citas = []) {
     const elemento = document.createElement("article");
     elemento.className = "sep";
     const titulo = document.createElement("strong");
-    titulo.textContent = rol === "user" ? "Vos" : "Documentador";
+    titulo.textContent = rol === "user" ? "Vos" : (panel.dataset.agente || "Documentador");
     const texto = document.createElement("p");
     texto.style.whiteSpace = "pre-wrap";
     texto.textContent = contenido;
@@ -41,6 +42,60 @@ function mostrar(rol, contenido, citas = []) {
     mensajes.append(elemento);
 }
 
+function mostrarAprobaciones(datos) {
+    const pendientes = datos.aprobaciones || [];
+    esperaAprobacion = pendientes.length > 0;
+    panel.querySelector("[data-aprobaciones]")?.remove();
+    if (!esperaAprobacion) return;
+    const seccion = document.createElement("div");
+    seccion.dataset.aprobaciones = "";
+    seccion.setAttribute("aria-label", "Aprobaciones pendientes");
+    for (const llamada of pendientes) {
+        const tarjeta = document.createElement("section");
+        tarjeta.className = "card";
+        const titulo = document.createElement("h3");
+        titulo.textContent = llamada.descripcion;
+        const detalle = document.createElement("pre");
+        detalle.textContent = JSON.stringify(llamada.argumentos, null, 2);
+        detalle.style.whiteSpace = "pre-wrap";
+        tarjeta.append(titulo, detalle);
+        for (const [accion, etiqueta] of [["aprobar", "Aprobar"], ["rechazar", "Rechazar"]]) {
+            const control = document.createElement("button");
+            control.type = "button";
+            control.className = "btn small";
+            control.textContent = etiqueta;
+            control.addEventListener("click", () => decidirAprobacion(datos.run_id, llamada.id, accion));
+            tarjeta.append(control);
+        }
+        seccion.append(tarjeta);
+    }
+    mensajes.after(seccion);
+}
+
+async function decidirAprobacion(run, llamada, accion) {
+    const controles = panel.querySelectorAll("[data-aprobaciones] button");
+    controles.forEach((control) => { control.disabled = true; });
+    estado.textContent = "Procesando la decisión…";
+    try {
+        const respuesta = await fetch("/agentes/runs/" + run + "/tool-calls/" + llamada + "/" + accion, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", Accept: "application/json", "X-CSRF": panel.dataset.csrf},
+            body: "{}",
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) throw new Error(datos.detail || "No se pudo registrar la decisión.");
+        conversacion = datos.conversacion_id;
+        mostrarAprobaciones(datos);
+        if (!esperaAprobacion && datos.respuesta !== undefined) mostrar("assistant", datos.respuesta, datos.citas);
+        estado.textContent = "";
+    } catch (error) {
+        estado.textContent = error.message;
+        controles.forEach((control) => { control.disabled = false; });
+    } finally {
+        boton.disabled = esperaAprobacion;
+    }
+}
+
 async function cargarHistorial() {
     try {
         const respuesta = await fetch(panel.dataset.ruta, {headers: {Accept: "application/json"}});
@@ -48,10 +103,11 @@ async function cargarHistorial() {
         const datos = await respuesta.json();
         conversacion = datos.conversacion_id;
         for (const fila of datos.mensajes) mostrar(fila.rol, fila.contenido, fila.citas);
+        mostrarAprobaciones(datos);
     } catch {
         estado.textContent = "No se pudo cargar el historial.";
     } finally {
-        boton.disabled = false;
+        boton.disabled = esperaAprobacion;
     }
 }
 
@@ -74,13 +130,14 @@ formulario.addEventListener("submit", async (evento) => {
         }
         conversacion = datos.conversacion_id;
         mostrar("user", mensaje);
-        mostrar("assistant", datos.respuesta, datos.citas);
+        mostrarAprobaciones(datos);
+        if (!esperaAprobacion) mostrar("assistant", datos.respuesta, datos.citas);
         consulta.value = "";
         estado.textContent = "";
     } catch (error) {
         estado.textContent = error instanceof SyntaxError ? "Volvé a iniciar sesión para consultar." : error.message;
     } finally {
-        boton.disabled = false;
+        boton.disabled = esperaAprobacion;
         consulta.disabled = false;
         consulta.focus();
     }

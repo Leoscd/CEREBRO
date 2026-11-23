@@ -9,14 +9,14 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from app import security
-from app.agentes import documentador
+from app.agentes import aprobaciones, documentador
 from app.agentes.herramientas import ContextoDocumentador, ids_visibles
 from app.db import db_dependency, pool
 from app.permisos import obtener_proyecto
 from app.security import require_user
 from app.services import auditoria
 
-router = APIRouter(prefix="/proyectos")
+router = APIRouter()
 _AGENTE = "documentador"
 _PRIVADO = {"Cache-Control": "private, no-store"}
 log = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def _mensajes(db: Connection, usuario: dict, proyecto: dict, conversacion_id: in
     return [fila for fila in reversed(recientes) if all(cita["chunk_id"] in visibles for cita in fila["citas"])]
 
 
-@router.get("/{codigo}/documentador")
+@router.get("/proyectos/{codigo}/documentador")
 def historial_documentador(codigo: str, user=Depends(require_user), db: Connection = Depends(db_dependency)):
     proyecto = obtener_proyecto(db, user, codigo)
     fila = db.execute(
@@ -98,7 +98,7 @@ def _marcar_fallido(empresa_id: int, conversacion: int, run: int) -> None:
         )
 
 
-@router.post("/{codigo}/documentador")
+@router.post("/proyectos/{codigo}/documentador")
 def preguntar_documentador(codigo: str, pregunta: Pregunta, request: Request, user=Depends(check_csrf)):
     mensaje = pregunta.mensaje.replace("\x00", " ").strip()
     empresa_id = user["empresa_id"]
@@ -157,3 +157,21 @@ def preguntar_documentador(codigo: str, pregunta: Pregunta, request: Request, us
         _marcar_fallido(empresa_id, conversacion, run)
         raise
     return JSONResponse({"conversacion_id": conversacion, "respuesta": respuesta, "citas": citas}, headers=_PRIVADO)
+
+
+def _decidir(run_id, llamada_id, aprobar, request, user):
+    try:
+        datos = aprobaciones.decidir(user, run_id, llamada_id, aprobar, request)
+    except aprobaciones.FalloModelo as error:
+        raise HTTPException(503, str(error)) from error
+    return JSONResponse(datos, headers=_PRIVADO)
+
+
+@router.post("/agentes/runs/{run_id}/tool-calls/{llamada_id}/aprobar")
+def aprobar(run_id: int, llamada_id: int, request: Request, user=Depends(check_csrf)):
+    return _decidir(run_id, llamada_id, True, request, user)
+
+
+@router.post("/agentes/runs/{run_id}/tool-calls/{llamada_id}/rechazar")
+def rechazar(run_id: int, llamada_id: int, request: Request, user=Depends(check_csrf)):
+    return _decidir(run_id, llamada_id, False, request, user)

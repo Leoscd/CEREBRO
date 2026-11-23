@@ -1,11 +1,11 @@
 ---
 id: T-026
 titulo: El servidor de desarrollo detecta un Postgres trabado
-estado: en-curso
+estado: en-revision
 rama: codex/T-026-dev-detecta-postgres-trabado
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#36"
 ---
 
 ## Objetivo

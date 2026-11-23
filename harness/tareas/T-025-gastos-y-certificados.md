@@ -1,11 +1,11 @@
 ---
 id: T-025
 titulo: Esqueleto de gastos y certificados
-estado: en-curso
+estado: en-revision
 rama: codex/T-025-gastos-y-certificados
 creada: 2026-11-23
 depende: T-024
-pr:
+pr: "#35"
 ---
 
 ## Objetivo

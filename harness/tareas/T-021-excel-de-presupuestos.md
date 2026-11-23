@@ -1,11 +1,11 @@
 ---
 id: T-021
 titulo: Exportar e importar presupuestos en Excel
-estado: en-curso
+estado: en-revision
 rama: codex/T-021-excel-de-presupuestos
 creada: 2026-11-23
 depende: T-020
-pr:
+pr: "#30"
 ---
 
 ## Objetivo

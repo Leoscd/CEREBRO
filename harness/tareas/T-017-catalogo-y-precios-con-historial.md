@@ -1,7 +1,7 @@
 ---
 id: T-017
 titulo: Catálogo de materiales, proveedores y precios con historial
-estado: en-revision
+estado: hecha
 rama: codex/T-017-catalogo-y-precios-con-historial
 creada: 2026-11-23
 depende: T-016
@@ -56,3 +56,4 @@ Que la empresa tenga su catálogo de materiales (y mano de obra/equipos), provee
 - Pasaron los cuatro casos de catálogo y la suite completa. El sensor rápido quedó silencioso.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Precios inmutables en la base (trigger UPDATE/DELETE/TRUNCATE); FKs compuestas por empresa; permiso por área gestión administrativa. Merge: #26.

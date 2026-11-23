@@ -4,7 +4,7 @@ titulo: Agente Presupuestos
 estado: lista
 rama: codex/T-023-agente-presupuestos
 creada: 2026-11-23
-depende: T-022
+depende: —
 pr:
 ---
 

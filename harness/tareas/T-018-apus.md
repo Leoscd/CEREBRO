@@ -1,7 +1,7 @@
 ---
 id: T-018
 titulo: Análisis de precios unitarios (APU)
-estado: en-revision
+estado: hecha
 rama: codex/T-018-apus
 creada: 2026-11-23
 depende: T-017
@@ -50,3 +50,4 @@ cantidad por unidad, y calcular el precio unitario con los precios vigentes a un
 - Sensores rápidos sin salida y suite completa en verde, incluido aislamiento.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Cuenta verificada a mano (504 y 603 centavos); insumos sin precio quedan en faltantes. Merge: #27.

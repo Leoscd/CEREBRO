@@ -1,7 +1,7 @@
 ---
 id: T-022
 titulo: Aprobaciones para herramientas que escriben (pausar y retomar)
-estado: en-revision
+estado: hecha
 rama: codex/T-022-aprobaciones-de-agentes
 creada: 2026-11-23
 depende: T-021
@@ -53,3 +53,4 @@ una persona la apruebe** en una tarjeta Aprobar/Rechazar; al aprobar, la ejecuci
 - Las pruebas con el modelo falso comprobaron aprobación, rechazo, doble solicitud y disponibilidad de todo el pool mientras corre el modelo. Sensores y suite completa en verde.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Ejecución exactamente una vez con argumentos aprobados idénticos (FOR UPDATE + misma transacción); contexto de sesión inyectado al retomar. Merge: #31.

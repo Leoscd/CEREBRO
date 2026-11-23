@@ -1,7 +1,7 @@
 ---
 id: T-020
 titulo: Verificador determinista de presupuestos
-estado: en-revision
+estado: hecha
 rama: codex/T-020-verificador-de-presupuestos
 creada: 2026-11-23
 depende: T-019
@@ -43,3 +43,4 @@ herramienta `analizar_presupuesto` que después usa el agente (T-023).
 - Un caso aislado por chequeo confirma que el presupuesto sano da cero hallazgos. También se verificaron repetibilidad, emisión y la suite completa.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Un caso por chequeo con hallazgo único; emisión bloqueada por errores; determinista. Merge: #29.

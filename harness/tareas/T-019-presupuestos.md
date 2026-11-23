@@ -1,7 +1,7 @@
 ---
 id: T-019
 titulo: Presupuestos del proyecto (rubros, ítems y totales al centavo)
-estado: en-revision
+estado: hecha
 rama: codex/T-019-presupuestos
 creada: 2026-11-23
 depende: T-018
@@ -57,3 +57,4 @@ coeficientes de gastos generales, beneficio e impuestos, y un total que **cierra
 - Se verificaron lectura de miembros del proyecto, 403 del colaborador al escribir y 404 para clientes o proyectos ajenos. Sensores y suite completa pasaron.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Presupuesto de prueba verificado a mano (11542); emitir congela PU. Nota: la inmutabilidad del emitido es solo de aplicación (T-025). Merge: #28.

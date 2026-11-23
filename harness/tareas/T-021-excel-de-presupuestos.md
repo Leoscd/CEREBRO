@@ -1,11 +1,11 @@
 ---
 id: T-021
 titulo: Exportar e importar presupuestos en Excel
-estado: lista
+estado: en-revision
 rama: codex/T-021-excel-de-presupuestos
 creada: 2026-11-23
 depende: T-020
-pr:
+pr: "#30"
 ---
 
 ## Objetivo
@@ -30,16 +30,21 @@ desde una planilla con un formato fijo, con vista previa antes de confirmar.
 - Solo `.xlsx`; rechazar macros (`.xlsm`) y archivos > 10 MB. Leer con `openpyxl` en modo `read_only` y `data_only`.
 
 ## Criterios de aceptación
-- [ ] CA1 Exportar el presupuesto de prueba de T-019: los valores de la hoja "Datos" coinciden al centavo con `calcular`,
+- [x] CA1 Exportar el presupuesto de prueba de T-019: los valores de la hoja "Datos" coinciden al centavo con `calcular`,
       y las fórmulas de "Presupuesto" referencian las celdas correctas (verificalo leyendo las fórmulas con openpyxl).
-- [ ] CA2 Importar una planilla con 1 fila mala → la vista previa marca esa fila y no escribe nada; corregida, confirma y crea los ítems.
-- [ ] CA3 Importar precios crea filas nuevas (no edita) y respeta el aislamiento por empresa.
-- [ ] CA4 `.xlsm`, archivo corrupto o > 10 MB → 400/413 sin escribir.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA2 Importar una planilla con 1 fila mala → la vista previa marca esa fila y no escribe nada; corregida, confirma y crea los ítems.
+- [x] CA3 Importar precios crea filas nuevas (no edita) y respeta el aislamiento por empresa.
+- [x] CA4 `.xlsm`, archivo corrupto o > 10 MB → 400/413 sin escribir.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Exportar a PDF. Leer planillas con formato libre (eso lo hará el agente).
 
 ## Bitácora del ejecutor
+
+- Se fijó openpyxl 3.1.5. La hoja Presupuesto usa fórmulas de fila, rubro, coeficientes y total. La hoja Datos deja a la vista los importes del cálculo servidor en centavos.
+- La vista previa devuelve números de fila y errores sin persistir cambios. La confirmación firmada está ligada a usuario, empresa y destino, y revalida todo dentro de la transacción.
+- Se rechazaron macros, archivos corruptos y archivos de más de 10 MB. La importación de precios agrega historial con fuente excel y reutiliza su auditoría.
+- Sensores y suite completa en verde, incluidas las pruebas de aislamiento.
 
 ## Dictamen del auditor

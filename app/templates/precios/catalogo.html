@@ -3,6 +3,16 @@
 {% block content %}
 <h1>Catálogo y precios</h1>
 <p><a href="/precios/proveedores">Proveedores</a> · <a href="/precios/apus">Análisis de precios unitarios</a></p>
+{% if editar %}
+<details class="card"><summary>Importar precios desde Excel</summary>
+  <p><a href="/precios/excel/plantilla.xlsx">Descargar plantilla de precios</a></p>
+  <form class="stack" method="post" action="/precios/excel/vista-previa" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Planilla .xlsx <input type="file" name="archivo" accept=".xlsx" required></label>
+    <button class="btn">Ver vista previa</button>
+  </form>
+</details>
+{% endif %}
 <div class="card">
   <table>
     <thead><tr><th>Código</th><th>Insumo</th><th>Unidad</th><th>Precio vigente</th><th>Última variación (pb)</th></tr></thead>

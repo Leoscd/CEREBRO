@@ -4,15 +4,15 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import RedirectResponse, Response
 from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
 from app.permisos import es_cliente, exigir, puede_gestionar_precios
 from app.security import check_csrf, require_user
-from app.services import apus, auditoria, dinero, precios
+from app.services import apus, auditoria, dinero, excel, precios
 from app.services.tiempo import TZ, hoy_local
 from app.templates import templates
 
@@ -250,3 +250,49 @@ def quitar_insumo(request: Request, apu_id: int, material_id: int,
                         detalle={"material_id": material_id}, request=request)
     db.commit()
     return RedirectResponse(f"/precios/apus/{apu_id}", 303)
+
+
+@router.get("/excel/plantilla.xlsx")
+def plantilla_precios_excel(user=Depends(_personal)):
+    return Response(
+        excel.plantilla(excel.COLUMNAS_PRECIOS), media_type=excel.TIPO_EXCEL,
+        headers={"Content-Disposition": 'attachment; filename="plantilla-precios.xlsx"'},
+    )
+
+
+@router.post("/excel/vista-previa")
+def vista_previa_precios_excel(request: Request, archivo: UploadFile = File(), user=Depends(check_csrf),
+                              db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    try:
+        contenido = excel.subir(archivo)
+        filas = excel.filas_precios(db, user["empresa_id"], contenido)
+    except excel.ExcelInvalido as error:
+        raise HTTPException(error.estado, str(error)) from error
+    confirmacion = None if any("error" in f for f in filas) else excel.firmar(contenido, user, "/precios", filas)
+    return templates.TemplateResponse(request, "excel_previa.html", {
+        "user": user, "filas": filas, "destino": "/precios", "confirmacion": confirmacion, "titulo": "Importar precios",
+    }, headers={"Cache-Control": "private, no-store"})
+
+
+@router.post("/excel/confirmar")
+def confirmar_precios_excel(request: Request, confirmacion: str = Form(max_length=excel.MAX_CONFIRMACION),
+                            user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    try:
+        contenido, huella = excel.abrir_confirmacion(confirmacion, user, "/precios")
+        filas = excel.filas_precios(db, user["empresa_id"], contenido)
+        excel.comprobar_filas(filas, huella)
+    except excel.ExcelInvalido as error:
+        raise HTTPException(error.estado, str(error)) from error
+    if any("error" in f for f in filas):
+        return templates.TemplateResponse(request, "excel_previa.html", {
+            "user": user, "filas": filas, "destino": "/precios", "confirmacion": None, "titulo": "Importar precios",
+        }, status_code=409, headers={"Cache-Control": "private, no-store"})
+    for fila in filas:
+        datos = fila["datos"]
+        if not precios.cargar(db, user, datos["material_id"], datos["precio_centavos"], datos["vigente_desde"],
+                             proveedor_id=datos["proveedor_id"], fuente="excel", request=request):
+            raise HTTPException(409, f"Fila {fila['numero']}: material o proveedor no disponible.")
+    db.commit()
+    return RedirectResponse("/precios", 303)

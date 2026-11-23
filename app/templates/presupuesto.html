@@ -29,6 +29,17 @@
 <p><a href="/proyecto/{{ proyecto.codigo }}/presupuestos">Presupuestos · {{ proyecto.nombre }}</a></p>
 <h1>{{ p.nombre }}</h1>
 <p>Versión {{ p.version }} · {{ p.estado | capitalize }} · Precios al {{ p.fecha_precios | solo_fecha }}</p>
+<p><a href="{{ url }}.xlsx">Descargar presupuesto en Excel</a></p>
+{% if editar and borrador %}
+<details class="card"><summary>Importar ítems desde Excel</summary>
+  <p><a href="{{ url }}/excel/plantilla.xlsx">Descargar plantilla de ítems</a></p>
+  <form class="stack" method="post" action="{{ url }}/excel/vista-previa" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Planilla .xlsx <input type="file" name="archivo" accept=".xlsx" required></label>
+    <button class="btn">Ver vista previa</button>
+  </form>
+</details>
+{% endif %}
 {% if hallazgos %}
 <section class="card" {% if request.scope.get('method') == 'POST' %}role="alert"{% endif %}>
   <h2>Revisión del presupuesto</h2>

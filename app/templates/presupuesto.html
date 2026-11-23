@@ -114,4 +114,11 @@
   <button class="btn">{{ "Emitir presupuesto" if borrador else "Crear nueva versión" }}</button>
 </form>
 {% endif %}
+<section id="panel-agente" class="card" data-agente="Presupuestos" data-ruta="{{ url }}/agente"
+         data-csrf="{{ csrf_token(user.id) }}">
+  <h2>Agente Presupuestos</h2>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/agente.js?v={{ static_version }}"></script>
 {% endblock %}

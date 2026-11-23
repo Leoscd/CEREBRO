@@ -1,11 +1,11 @@
 ---
 id: T-020
 titulo: Verificador determinista de presupuestos
-estado: lista
+estado: en-revision
 rama: codex/T-020-verificador-de-presupuestos
 creada: 2026-11-23
 depende: T-019
-pr:
+pr: "#29"
 ---
 
 ## Objetivo
@@ -28,14 +28,18 @@ herramienta `analizar_presupuesto` que después usa el agente (T-023).
 - Emitir un presupuesto con algún **error** → 409 con la lista. Los avisos no bloquean.
 
 ## Criterios de aceptación
-- [ ] CA1 Un caso por chequeo: el presupuesto con ese defecto produce exactamente ese hallazgo, y uno sano produce **cero**.
-- [ ] CA2 Emitir con un error → 409 y no cambia de estado; con solo avisos → se emite.
-- [ ] CA3 Determinista: correrlo dos veces da la misma lista en el mismo orden.
-- [ ] CA4 Sensores y suite en verde.
+- [x] CA1 Un caso por chequeo: el presupuesto con ese defecto produce exactamente ese hallazgo, y uno sano produce **cero**.
+- [x] CA2 Emitir con un error → 409 y no cambia de estado; con solo avisos → se emite.
+- [x] CA3 Determinista: correrlo dos veces da la misma lista en el mismo orden.
+- [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Comparar contra presupuestos de otros proyectos. Chequeos con IA.
 
 ## Bitácora del ejecutor
+
+- El verificador usa el mismo resultado que se congela al emitir. Los mensajes y el orden dependen del presupuesto y de su fecha de precios.
+- Los errores devuelven 409 y dejan el borrador tal como estaba. Se muestran en la ficha o como JSON. Los avisos permiten emitir.
+- Un caso aislado por chequeo confirma que el presupuesto sano da cero hallazgos. También se verificaron repetibilidad, emisión y la suite completa.
 
 ## Dictamen del auditor

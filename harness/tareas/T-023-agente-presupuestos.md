@@ -1,11 +1,11 @@
 ---
 id: T-023
 titulo: Agente Presupuestos
-estado: en-curso
+estado: en-revision
 rama: codex/T-023-agente-presupuestos
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#33"
 ---
 
 ## Objetivo

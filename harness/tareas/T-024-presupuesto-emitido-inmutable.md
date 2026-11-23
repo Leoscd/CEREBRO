@@ -1,11 +1,11 @@
 ---
 id: T-024
 titulo: Presupuesto emitido inmutable en la base
-estado: en-curso
+estado: en-revision
 rama: codex/T-024-presupuesto-emitido-inmutable
 creada: 2026-11-23
 depende: T-023
-pr:
+pr: "#34"
 ---
 
 ## Objetivo

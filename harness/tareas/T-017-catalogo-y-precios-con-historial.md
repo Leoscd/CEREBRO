@@ -1,11 +1,11 @@
 ---
 id: T-017
 titulo: Catálogo de materiales, proveedores y precios con historial
-estado: en-curso
+estado: en-revision
 rama: codex/T-017-catalogo-y-precios-con-historial
 creada: 2026-11-23
 depende: T-016
-pr:
+pr: "#26"
 ---
 
 ## Objetivo

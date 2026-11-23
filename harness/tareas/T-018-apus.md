@@ -1,11 +1,11 @@
 ---
 id: T-018
 titulo: Análisis de precios unitarios (APU)
-estado: en-curso
+estado: en-revision
 rama: codex/T-018-apus
 creada: 2026-11-23
 depende: T-017
-pr:
+pr: "#27"
 ---
 
 ## Objetivo

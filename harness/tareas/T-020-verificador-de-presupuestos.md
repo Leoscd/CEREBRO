@@ -1,11 +1,11 @@
 ---
 id: T-020
 titulo: Verificador determinista de presupuestos
-estado: en-curso
+estado: en-revision
 rama: codex/T-020-verificador-de-presupuestos
 creada: 2026-11-23
 depende: T-019
-pr:
+pr: "#29"
 ---
 
 ## Objetivo

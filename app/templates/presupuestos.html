@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Presupuestos · {{ proyecto.codigo }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/proyecto/{{ proyecto.codigo }}">{{ proyecto.nombre }}</a></p>
+<h1>Presupuestos</h1>
+<div class="card">
+  <table>
+    <thead><tr><th>Presupuesto</th><th>Versión</th><th>Estado</th><th>Fecha de precios</th></tr></thead>
+    <tbody>
+    {% for fila in filas %}
+      <tr><td><a href="/presupuestos/{{ fila.id }}">{{ fila.nombre }}</a></td><td>{{ fila.version }}</td>
+        <td>{{ fila.estado | capitalize }}</td><td>{{ fila.fecha_precios | solo_fecha }}</td></tr>
+    {% else %}<tr><td colspan="4">Todavía no hay presupuestos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if editar %}
+<form class="card stack" method="post">
+  <h2>Nuevo presupuesto</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Nombre <input name="nombre" required maxlength="240"></label>
+  <label>Fecha de precios <input type="date" name="fecha_precios" value="{{ hoy }}" required></label>
+  <label>Gastos generales (pb) <input type="number" name="gastos_generales_pb" min="0" value="0" required></label>
+  <label>Beneficio (pb) <input type="number" name="beneficio_pb" min="0" value="0" required></label>
+  <label>Impuestos (pb) <input type="number" name="impuestos_pb" min="0" value="0" required></label>
+  <p class="muted">100 puntos básicos equivalen al 1 %.</p>
+  <button class="btn">Crear presupuesto</button>
+</form>
+{% endif %}
+{% endblock %}

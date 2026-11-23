@@ -1,11 +1,11 @@
 ---
 id: T-019
 titulo: Presupuestos del proyecto (rubros, ítems y totales al centavo)
-estado: lista
+estado: en-revision
 rama: codex/T-019-presupuestos
 creada: 2026-11-23
 depende: T-018
-pr:
+pr: "#28"
 ---
 
 ## Objetivo
@@ -39,16 +39,21 @@ coeficientes de gastos generales, beneficio e impuestos, y un total que **cierra
 - Pantalla `/proyecto/{codigo}/presupuestos` y `/presupuestos/{id}`: rubros, ítems, subtotales, coeficientes y total con el filtro `pesos`.
 
 ## Criterios de aceptación
-- [ ] CA1 **Presupuesto de prueba al centavo**: un fixture con 2 rubros, 5 ítems (con APU y manuales, cantidades con decimales) y
+- [x] CA1 **Presupuesto de prueba al centavo**: un fixture con 2 rubros, 5 ítems (con APU y manuales, cantidades con decimales) y
       coeficientes; el total esperado está **calculado a mano y escrito en la prueba**, paso por paso, y coincide exacto.
-- [ ] CA2 Emitido: agregar o editar ítems → 409; "Nueva versión" crea borrador v2 con los mismos ítems.
-- [ ] CA3 Cambiar un precio en el catálogo no altera un presupuesto con `fecha_precios` anterior.
-- [ ] CA4 Aislamiento y roles: otra empresa → 404; colaborador ve pero no edita (403); cliente → 404.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA2 Emitido: agregar o editar ítems → 409; "Nueva versión" crea borrador v2 con los mismos ítems.
+- [x] CA3 Cambiar un precio en el catálogo no altera un presupuesto con `fecha_precios` anterior.
+- [x] CA4 Aislamiento y roles: otra empresa → 404; colaborador ve pero no edita (403); cliente → 404.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Verificador (T-020), Excel (T-021), agente (T-023), gastos y certificados.
 
 ## Bitácora del ejecutor
+
+- La prueba fija la cuenta manual de dos rubros y cinco ítems, con un total esperado de 11.542 centavos. El servicio comparte la fórmula de coeficientes con todas las rutas.
+- La emisión conserva el precio unitario de cada ítem en bigint y bloquea edición bajo el mismo bloqueo del presupuesto. Una versión nueva copia estructura y referencias a un borrador numerado.
+- Un presupuesto anterior conserva la fecha de cotización. Los emitidos mantienen además sus importes aunque luego se agregue una cotización retroactiva.
+- Se verificaron lectura de miembros del proyecto, 403 del colaborador al escribir y 404 para clientes o proyectos ajenos. Sensores y suite completa pasaron.
 
 ## Dictamen del auditor

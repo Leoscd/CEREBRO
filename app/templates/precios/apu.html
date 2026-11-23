@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ apu.descripcion }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/precios/apus">Análisis de precios unitarios</a></p>
+<h1>{{ apu.descripcion }}</h1>
+<p>{{ apu.codigo }} · {{ apu.unidad }}{% if not apu.activo %} · Inactivo{% endif %}</p>
+<section class="card">
+  <h2>Desglose</h2>
+  <table>
+    <thead><tr><th>Insumo</th><th>Cantidad</th><th>Desperdicio (pb)</th><th>Precio</th><th>Subtotal</th>{% if editar %}<th>Acción</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for fila in calculo.detalle + calculo.faltantes %}
+      {% set insumo = fila.insumo if fila.insumo is defined else fila %}
+      <tr><td>{{ insumo.nombre }}</td><td>{{ insumo.cantidad }} {{ insumo.unidad }}</td>
+        <td>{{ insumo.desperdicio_pb }}</td>
+        <td>{{ fila.precio_centavos | pesos if fila.precio_centavos is defined else "Sin precio vigente" }}</td>
+        <td>{{ fila.subtotal_centavos | pesos if fila.subtotal_centavos is defined else "—" }}</td>
+        {% if editar %}<td><form method="post" action="/precios/apus/{{ apu.id }}/insumos/{{ insumo.material_id }}/quitar">
+          <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}"><button class="btn small">Quitar</button>
+        </form></td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Precio unitario{{ " parcial" if calculo.faltantes }}: {{ calculo.total_centavos | pesos if calculo.detalle else "—" }}</strong></p>
+</section>
+{% if editar %}
+<form class="card" method="post" action="/precios/apus/{{ apu.id }}/insumos">
+  <h2>Agregar o actualizar insumo</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Insumo <select name="material_id" required>
+    <option value="">Elegí un insumo</option>
+    {% for material in materiales %}<option value="{{ material.id }}">{{ material.codigo }} · {{ material.nombre }}</option>{% endfor %}
+  </select></label>
+  <label>Cantidad por unidad <input name="cantidad" type="number" min="0.0001" step="0.0001" required></label>
+  <label>Desperdicio (puntos básicos) <input name="desperdicio_pb" type="number" min="0" step="1" value="0" required></label>
+  <button class="btn">Guardar insumo</button>
+</form>
+<form class="card" method="post" action="/precios/apus/{{ apu.id }}/editar">
+  <h2>Editar análisis</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Código <input name="codigo" value="{{ apu.codigo }}" required maxlength="80"></label>
+  <label>Descripción <input name="descripcion" value="{{ apu.descripcion }}" required maxlength="240"></label>
+  <label>Unidad <input name="unidad" value="{{ apu.unidad }}" required maxlength="40"></label>
+  <label>Rubro <input name="rubro" value="{{ apu.rubro }}" maxlength="120"></label>
+  <label><input type="checkbox" name="activo" value="true" {% if apu.activo %}checked{% endif %}> Activo</label>
+  <button class="btn">Guardar análisis</button>
+</form>
+{% endif %}
+{% endblock %}

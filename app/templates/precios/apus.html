@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Análisis de precios unitarios · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/precios">Catálogo y precios</a></p>
+<h1>Análisis de precios unitarios</h1>
+<div class="card">
+  <table>
+    <thead><tr><th>Código</th><th>APU</th><th>Unidad</th><th>Precio unitario a hoy</th></tr></thead>
+    <tbody>
+    {% for apu in filas %}
+      <tr><td>{{ apu.codigo }}</td><td><a href="/precios/apus/{{ apu.id }}">{{ apu.descripcion }}</a>{% if not apu.activo %} · Inactivo{% endif %}</td>
+        <td>{{ apu.unidad }}</td><td>{{ apu.calculo.total_centavos | pesos if apu.calculo.detalle else "—" }}
+        {% if apu.calculo.faltantes %} · Faltan precios{% endif %}</td></tr>
+    {% else %}<tr><td colspan="4">Todavía no hay APUs.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if editar %}
+<form class="card" method="post" action="/precios/apus">
+  <h2>Nuevo análisis</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Código <input name="codigo" required maxlength="80"></label>
+  <label>Descripción <input name="descripcion" required maxlength="240"></label>
+  <label>Unidad <input name="unidad" required maxlength="40"></label>
+  <label>Rubro <input name="rubro" maxlength="120"></label>
+  <button class="btn">Crear análisis</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,7 @@
 """Catálogo interno de materiales, proveedores y precios."""
 
 from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -11,8 +12,8 @@ from psycopg.errors import UniqueViolation
 from app.db import db_dependency
 from app.permisos import es_cliente, exigir, puede_gestionar_precios
 from app.security import check_csrf, require_user
-from app.services import auditoria, dinero, precios
-from app.services.tiempo import TZ
+from app.services import apus, auditoria, dinero, precios
+from app.services.tiempo import TZ, hoy_local
 from app.templates import templates
 
 router = APIRouter(prefix="/precios")
@@ -134,3 +135,118 @@ def alta_proveedor(request: Request, nombre: str = Form(max_length=240), cuit: s
     auditoria.registrar(db, user, "proveedor.creado", objeto="proveedor", objeto_id=proveedor["id"], request=request)
     db.commit()
     return RedirectResponse("/precios/proveedores", 303)
+
+
+def _apu(db: Connection, empresa_id: int, apu_id: int) -> dict:
+    fila = db.execute("SELECT * FROM apus WHERE empresa_id=%s AND id=%s", (empresa_id, apu_id)).fetchone()
+    if not fila:
+        raise HTTPException(404, "APU no encontrado")
+    return fila
+
+
+@router.get("/apus")
+def lista_apus(request: Request, user=Depends(_personal), db: Connection = Depends(db_dependency)):
+    empresa_id = user["empresa_id"]
+    filas = db.execute(
+        "SELECT id,codigo,descripcion,unidad,activo FROM apus WHERE empresa_id=%s ORDER BY codigo",
+        (empresa_id,),
+    ).fetchall()
+    hoy = hoy_local()
+    for fila in filas:
+        fila["calculo"] = apus.precio_unitario(db, empresa_id, fila["id"], hoy)
+    return templates.TemplateResponse(request, "precios/apus.html", {
+        "user": user, "filas": filas, "editar": puede_gestionar_precios(user, db),
+    })
+
+
+@router.get("/apus/{apu_id}")
+def detalle_apu(request: Request, apu_id: int, user=Depends(_personal), db: Connection = Depends(db_dependency)):
+    empresa_id = user["empresa_id"]
+    apu = _apu(db, empresa_id, apu_id)
+    materiales = db.execute(
+        "SELECT id,codigo,nombre FROM materiales WHERE empresa_id=%s AND activo ORDER BY codigo", (empresa_id,),
+    ).fetchall()
+    return templates.TemplateResponse(request, "precios/apu.html", {
+        "user": user, "apu": apu, "calculo": apus.precio_unitario(db, empresa_id, apu_id, hoy_local()),
+        "materiales": materiales, "editar": puede_gestionar_precios(user, db),
+    })
+
+
+@router.post("/apus")
+def alta_apu(request: Request, codigo: str = Form(max_length=80), descripcion: str = Form(max_length=240),
+             unidad: str = Form(max_length=40), rubro: str = Form("", max_length=120),
+             user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    try:
+        fila = db.execute(
+            "INSERT INTO apus(empresa_id,codigo,descripcion,unidad,rubro) VALUES (%s,%s,%s,%s,%s) RETURNING id",
+            (user["empresa_id"], _texto(codigo, "el código"), _texto(descripcion, "la descripción"),
+             _texto(unidad, "la unidad"), rubro.strip()),
+        ).fetchone()
+    except UniqueViolation as exc:
+        raise HTTPException(409, "Ya existe un APU con ese código.") from exc
+    auditoria.registrar(db, user, "apu.creado", objeto="apu", objeto_id=fila["id"], request=request)
+    db.commit()
+    return RedirectResponse(f"/precios/apus/{fila['id']}", 303)
+
+
+@router.post("/apus/{apu_id}/editar")
+def editar_apu(request: Request, apu_id: int, codigo: str = Form(max_length=80),
+               descripcion: str = Form(max_length=240), unidad: str = Form(max_length=40),
+               rubro: str = Form("", max_length=120), activo: bool = Form(False),
+               user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    try:
+        fila = db.execute(
+            """UPDATE apus SET codigo=%s,descripcion=%s,unidad=%s,rubro=%s,activo=%s
+                WHERE empresa_id=%s AND id=%s RETURNING id""",
+            (_texto(codigo, "el código"), _texto(descripcion, "la descripción"), _texto(unidad, "la unidad"),
+             rubro.strip(), activo, user["empresa_id"], apu_id),
+        ).fetchone()
+    except UniqueViolation as exc:
+        raise HTTPException(409, "Ya existe un APU con ese código.") from exc
+    if not fila:
+        raise HTTPException(404, "APU no encontrado")
+    auditoria.registrar(db, user, "apu.editado", objeto="apu", objeto_id=apu_id, request=request)
+    db.commit()
+    return RedirectResponse(f"/precios/apus/{apu_id}", 303)
+
+
+@router.post("/apus/{apu_id}/insumos")
+def guardar_insumo(request: Request, apu_id: int, material_id: int = Form(gt=0, le=2**63-1),
+                   cantidad: Decimal = Form(gt=0, max_digits=14, decimal_places=4),
+                   desperdicio_pb: int = Form(0, ge=0, le=2**31-1),
+                   user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    empresa_id = user["empresa_id"]
+    fila = db.execute(
+        """INSERT INTO apu_insumos(empresa_id,apu_id,material_id,cantidad,desperdicio_pb)
+           SELECT a.empresa_id,a.id,m.id,%s,%s FROM apus a
+             JOIN materiales m ON m.empresa_id=a.empresa_id AND m.id=%s
+            WHERE a.empresa_id=%s AND a.id=%s
+           ON CONFLICT (empresa_id,apu_id,material_id)
+           DO UPDATE SET cantidad=excluded.cantidad, desperdicio_pb=excluded.desperdicio_pb RETURNING apu_id""",
+        (cantidad, desperdicio_pb, material_id, empresa_id, apu_id),
+    ).fetchone()
+    if not fila:
+        raise HTTPException(404, "APU o insumo no encontrado")
+    auditoria.registrar(db, user, "apu.insumo_guardado", objeto="apu", objeto_id=apu_id,
+                        detalle={"material_id": material_id}, request=request)
+    db.commit()
+    return RedirectResponse(f"/precios/apus/{apu_id}", 303)
+
+
+@router.post("/apus/{apu_id}/insumos/{material_id}/quitar")
+def quitar_insumo(request: Request, apu_id: int, material_id: int,
+                  user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    exigir(puede_gestionar_precios(user, db))
+    fila = db.execute(
+        "DELETE FROM apu_insumos WHERE empresa_id=%s AND apu_id=%s AND material_id=%s RETURNING apu_id",
+        (user["empresa_id"], apu_id, material_id),
+    ).fetchone()
+    if not fila:
+        raise HTTPException(404, "Insumo no encontrado")
+    auditoria.registrar(db, user, "apu.insumo_quitado", objeto="apu", objeto_id=apu_id,
+                        detalle={"material_id": material_id}, request=request)
+    db.commit()
+    return RedirectResponse(f"/precios/apus/{apu_id}", 303)

@@ -1,7 +1,7 @@
 ---
 id: T-018
 titulo: Análisis de precios unitarios (APU)
-estado: lista
+estado: en-curso
 rama: codex/T-018-apus
 creada: 2026-11-23
 depende: T-017
@@ -33,15 +33,20 @@ cantidad por unidad, y calcular el precio unitario con los precios vigentes a un
   Mismo permiso que precios para editar. POST con `check_csrf` y auditoría.
 
 ## Criterios de aceptación
-- [ ] CA1 Un APU de prueba con 3 insumos da un total **calculado a mano en la prueba** (dejá la cuenta escrita en un comentario).
-- [ ] CA2 Con un precio nuevo cargado después, `precio_unitario` a la fecha vieja no cambia y a hoy sí.
-- [ ] CA3 Insumo sin precio → aparece en `faltantes` y la pantalla lo marca.
-- [ ] CA4 Aislamiento: un APU no puede usar materiales de otra empresa (la base lo impide con FK compuesta, como en T-002) y los ids ajenos dan 404.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA1 Un APU de prueba con 3 insumos da un total **calculado a mano en la prueba** (dejá la cuenta escrita en un comentario).
+- [x] CA2 Con un precio nuevo cargado después, `precio_unitario` a la fecha vieja no cambia y a hoy sí.
+- [x] CA3 Insumo sin precio → aparece en `faltantes` y la pantalla lo marca.
+- [x] CA4 Aislamiento: un APU no puede usar materiales de otra empresa (la base lo impide con FK compuesta, como en T-002) y los ids ajenos dan 404.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Cargas sociales y coeficientes del presupuesto (T-019).
 
 ## Bitácora del ejecutor
+
+- Se resolvió la vigencia con el mismo servicio del catálogo. La cantidad efectiva incluye desperdicio y se redondea por insumo antes de sumar.
+- El ejemplo calculado a mano da 504 centavos en la fecha inicial y 603 tras una cotización posterior. Los faltantes quedan identificados y el total se muestra como parcial.
+- Las referencias compuestas bloquean materiales de otra empresa. El mismo permiso del catálogo controla altas y edición, con CSRF y auditoría.
+- Sensores rápidos sin salida y suite completa en verde, incluido aislamiento.
 
 ## Dictamen del auditor

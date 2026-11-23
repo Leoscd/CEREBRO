@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.db import abrir_pool, cerrar_pool
-from app.routers import admin, agentes, archivos, auth, busqueda, inicio, precios, proyectos
+from app.routers import admin, agentes, archivos, auth, busqueda, inicio, precios, presupuestos, proyectos
 
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ app.include_router(busqueda.router)
 app.include_router(archivos.router)
 app.include_router(admin.router)
 app.include_router(precios.router)
+app.include_router(presupuestos.router)
 app.include_router(agentes.router)
 
 

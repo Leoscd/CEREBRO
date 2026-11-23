@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 
 from app import config
 from app.security import csrf_token
+from app.services import dinero
 from app.services.tiempo import formatear
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,6 +22,7 @@ templates.env.globals["marca"] = config.MARCA
 templates.env.globals["csrf_token"] = csrf_token
 templates.env.filters["fecha"] = formatear
 templates.env.filters["solo_fecha"] = lambda v: formatear(v, con_hora=False)
+templates.env.filters["pesos"] = dinero.formatear
 
 ETAPAS = {
     "anteproyecto": "Anteproyecto",

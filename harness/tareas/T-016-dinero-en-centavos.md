@@ -1,11 +1,11 @@
 ---
 id: T-016
 titulo: Servicio de dinero en centavos
-estado: lista
+estado: en-revision
 rama: codex/T-016-dinero-en-centavos
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#25"
 ---
 
 ## Objetivo
@@ -32,15 +32,19 @@ un presupuesto cierre al centavo (requisito de verificación de M2).
 - Filtro Jinja `pesos` que usa `formatear`.
 
 ## Criterios de aceptación
-- [ ] CA1 Ida y vuelta: `formatear(leer_pesos(x))` es estable para una tabla de casos (miles, negativos, cero, `0,05`).
-- [ ] CA2 Redondeo half-up probado en los bordes (`x,xx5`), y `multiplicar` de cantidades con 4 decimales.
-- [ ] CA3 `leer_pesos` rechaza `"1,234.56"` ambiguo, `"12,345"` (3 decimales), `""`, `"abc"`.
-- [ ] CA4 El módulo no importa ni usa `float` (comprobalo en la prueba leyendo el fuente o con `ast`).
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA1 Ida y vuelta: `formatear(leer_pesos(x))` es estable para una tabla de casos (miles, negativos, cero, `0,05`).
+- [x] CA2 Redondeo half-up probado en los bordes (`x,xx5`), y `multiplicar` de cantidades con 4 decimales.
+- [x] CA3 `leer_pesos` rechaza `"1,234.56"` ambiguo, `"12,345"` (3 decimales), `""`, `"abc"`.
+- [x] CA4 El módulo no importa ni usa `float` (comprobalo en la prueba leyendo el fuente o con `ast`).
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Monedas que no sean pesos. Inflación/índices (T-017).
 
 ## Bitácora del ejecutor
+
+- Se portó el criterio de centavos enteros y el formato argentino de PEDIDOS-M14. Acá se muestran siempre los dos decimales y se aceptan signos a ambos lados del símbolo de moneda.
+- Las cantidades decimales se convierten en razones exactas de enteros. Cantidades y coeficientes comparten el redondeo half-up, con los empates alejándose de cero.
+- Las pruebas de dinero cubren lectura, filtro de Jinja, bordes y estructura del módulo. El sensor rápido quedó silencioso y pasó la suite completa, incluido aislamiento.
 
 ## Dictamen del auditor

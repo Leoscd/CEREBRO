@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
+from psycopg import DatabaseError
 
 from app.services import presupuestos, precios
 from app.services.tiempo import TZ
@@ -115,3 +116,39 @@ def test_rutas_de_presupuesto_respetan_proyecto_y_rol(db, mundo, como, presupues
     assert como(cliente["email"]).get(ruta).status_code == 404
     assert como(otro["email"]).get(ruta).status_code == 404
     assert como(mundo["beto"]["email"]).get(ruta).status_code == 404
+
+
+def test_postgres_bloquea_cambios_directos_en_emitidos(db, mundo, presupuesto_muestra):
+    p = presupuesto_muestra
+    ids = (p["empresa_id"], p["id"])
+    inicial = presupuestos.calcular(db, *ids)
+    presupuestos.emitir(db, mundo["admin_a"], p, inicial)
+    db.commit()
+    item = inicial["rubros"][0]["items"][0]["id"]
+    for sql, parametros in [
+        ("UPDATE items_presupuesto SET cantidad=2 WHERE empresa_id=%s AND presupuesto_id=%s AND id=%s", (*ids, item)),
+        ("INSERT INTO rubros_presupuesto (empresa_id,presupuesto_id,nombre,orden) VALUES (%s,%s,'Nuevo',10)", ids),
+        ("DELETE FROM rubros_presupuesto WHERE empresa_id=%s AND presupuesto_id=%s", ids),
+        ("UPDATE presupuestos SET nombre='Modificado' WHERE empresa_id=%s AND id=%s", ids),
+        ("DELETE FROM presupuestos WHERE empresa_id=%s AND id=%s", ids),
+        ("TRUNCATE items_presupuesto CASCADE", ()),
+    ]:
+        with pytest.raises(DatabaseError, match="emitido es inmutable"), db.transaction():
+            db.execute(sql, parametros)
+    assert db.execute("UPDATE presupuestos SET nombre=nombre WHERE empresa_id=%s AND id=%s", ids).rowcount == 1
+    assert presupuestos.calcular(db, *ids)["total_centavos"] == 11542
+
+
+def test_postgres_bloquea_mover_rubro_a_emitido(db, mundo, presupuesto_muestra):
+    p = presupuesto_muestra
+    empresa = p["empresa_id"]
+    actor = mundo["admin_a"]
+    presupuestos.emitir(db, actor, p, presupuestos.calcular(db, empresa, p["id"]))
+    copia = presupuestos.nueva_version(db, actor, p)
+    rubro = presupuestos.agregar_rubro(db, actor, p | {"id": copia}, "Rubro sin ítems")
+    db.commit()
+    with pytest.raises(DatabaseError, match="emitido es inmutable"), db.transaction():
+        db.execute(
+            "UPDATE rubros_presupuesto SET presupuesto_id=%s WHERE empresa_id=%s AND id=%s",
+            (p["id"], empresa, rubro),
+        )

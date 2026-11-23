@@ -1,7 +1,7 @@
 ---
 id: T-021
 titulo: Exportar e importar presupuestos en Excel
-estado: en-revision
+estado: hecha
 rama: codex/T-021-excel-de-presupuestos
 creada: 2026-11-23
 depende: T-020
@@ -48,3 +48,4 @@ desde una planilla con un formato fijo, con vista previa antes de confirmar.
 - Sensores y suite completa en verde, incluidas las pruebas de aislamiento.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Celdas de texto sin fórmulas; rechaza macros, DOCTYPE (XXE) y zips > 64 MB; vista previa firmada y atada a empresa/usuario/destino. Merge: #30.

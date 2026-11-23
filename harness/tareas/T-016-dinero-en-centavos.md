@@ -1,7 +1,7 @@
 ---
 id: T-016
 titulo: Servicio de dinero en centavos
-estado: en-revision
+estado: hecha
 rama: codex/T-016-dinero-en-centavos
 creada: 2026-11-23
 depende: —
@@ -48,3 +48,4 @@ un presupuesto cierre al centavo (requisito de verificación de M2).
 - Las pruebas de dinero cubren lectura, filtro de Jinja, bordes y estructura del módulo. El sensor rápido quedó silencioso y pasó la suite completa, incluido aislamiento.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). Redondeo exacto: Decimal.as_integer_ratio + half-up sobre enteros, sin float. Merge: #25.

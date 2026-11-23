@@ -1,7 +1,7 @@
 ---
 id: T-022
 titulo: Aprobaciones para herramientas que escriben (pausar y retomar)
-estado: lista
+estado: en-curso
 rama: codex/T-022-aprobaciones-de-agentes
 creada: 2026-11-23
 depende: T-021
@@ -36,15 +36,20 @@ una persona la apruebe** en una tarjeta Aprobar/Rechazar; al aprobar, la ejecuci
 - Modelo falso con guion para pruebas: pide una herramienta de escritura de prueba (registrada solo en tests) y luego responde.
 
 ## Criterios de aceptación
-- [ ] CA1 Sin aprobar, la herramienta de escritura **no corre** (el efecto no existe en la base) y el run queda `esperando_aprobacion`.
-- [ ] CA2 Aprobar → corre una sola vez y el run termina `hecho` con la respuesta final; aprobar de nuevo → 409.
-- [ ] CA3 Rechazar → no corre, el modelo recibe el rechazo y el run termina.
-- [ ] CA4 Otra persona de la misma empresa, otra empresa o sin el permiso de la herramienta → 404/403; dos aprobaciones simultáneas → un solo efecto.
-- [ ] CA5 Ninguna conexión del pool tomada mientras el modelo piensa (mismo estilo de prueba que T-011). Sensores y suite en verde.
+- [x] CA1 Sin aprobar, la herramienta de escritura **no corre** (el efecto no existe en la base) y el run queda `esperando_aprobacion`.
+- [x] CA2 Aprobar → corre una sola vez y el run termina `hecho` con la respuesta final; aprobar de nuevo → 409.
+- [x] CA3 Rechazar → no corre, el modelo recibe el rechazo y el run termina.
+- [x] CA4 Otra persona de la misma empresa, otra empresa o sin el permiso de la herramienta → 404/403; dos aprobaciones simultáneas → un solo efecto.
+- [x] CA5 Ninguna conexión del pool tomada mientras el modelo piensa (mismo estilo de prueba que T-011). Sensores y suite en verde.
 
 ## Fuera de alcance
 - Aprobaciones de sesiones de trabajo de Codex (M4). Notificaciones.
 
 ## Bitácora del ejecutor
+
+- El Agents SDK pausa las escrituras con needs_approval y guarda un RunState sin serializar la sesión. Se muestra el mismo objeto validado que se compara y se ejecuta al retomar.
+- Se revalida propietario, empresa, proyecto y permiso. El bloqueo del run ordena decisiones simultáneas y la transacción de la herramienta une el efecto al estado ejecutada.
+- Las decisiones auditan aprobación o rechazo. El rechazo se entrega al modelo. La herramienta de prueba solo se registra en tests y el Documentador conserva su comportamiento.
+- Las pruebas con el modelo falso comprobaron aprobación, rechazo, doble solicitud y disponibilidad de todo el pool mientras corre el modelo. Sensores y suite completa en verde.
 
 ## Dictamen del auditor

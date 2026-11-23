@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Proveedores · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/precios">Catálogo y precios</a></p>
+<h1>Proveedores</h1>
+<ul class="card">
+  {% for proveedor in proveedores %}
+  <li>{{ proveedor.nombre }}{% if proveedor.cuit %} · {{ proveedor.cuit }}{% endif %}{% if proveedor.contacto %} · {{ proveedor.contacto }}{% endif %}</li>
+  {% else %}<li>Todavía no hay proveedores.</li>{% endfor %}
+</ul>
+{% if editar %}
+<form method="post" action="/precios/proveedores" class="card">
+  <h2>Nuevo proveedor</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Nombre <input name="nombre" required maxlength="240"></label>
+  <label>CUIT <input name="cuit" maxlength="25"></label>
+  <label>Contacto <input name="contacto" maxlength="240"></label>
+  <button class="btn">Crear proveedor</button>
+</form>
+{% endif %}
+{% endblock %}

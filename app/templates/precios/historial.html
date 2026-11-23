@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ material.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/precios">Catálogo y precios</a></p>
+<h1>{{ material.nombre }}</h1>
+<p>{{ material.codigo }} · {{ material.unidad }}</p>
+<div class="card">
+  <h2>Historial de precios</h2>
+  <table>
+    <thead><tr><th>Vigente desde</th><th>Precio</th><th>Variación (pb)</th><th>Proveedor</th><th>Fuente</th></tr></thead>
+    <tbody>
+      {% for fila in filas %}
+      <tr><td>{{ fila.vigente_desde | solo_fecha }}</td><td>{{ fila.actual_centavos | pesos }}</td>
+        <td>{{ fila.variacion_pb if fila.variacion_pb is not none else "—" }}</td>
+        <td>{{ fila.proveedor or "—" }}</td><td>{{ fila.fuente }}</td></tr>
+      {% else %}
+      <tr><td colspan="5">Todavía no hay precios.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if editar %}
+<form method="post" action="/precios/materiales/{{ material.id }}/precios" class="card">
+  <h2>Cargar precio</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Precio en pesos <input name="precio" inputmode="decimal" required maxlength="64" placeholder="1.234,56"></label>
+  <label>Vigente desde <input type="date" name="vigente_desde" required></label>
+  <label>Proveedor <select name="proveedor_id">
+    <option value="">Sin proveedor</option>
+    {% for proveedor in proveedores %}<option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>{% endfor %}
+  </select></label>
+  <button class="btn">Cargar precio</button>
+</form>
+{% endif %}
+{% endblock %}

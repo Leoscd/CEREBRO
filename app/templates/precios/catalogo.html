@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Catálogo y precios · {{ marca }}{% endblock %}
+{% block content %}
+<h1>Catálogo y precios</h1>
+<p><a href="/precios/proveedores">Proveedores</a></p>
+<div class="card">
+  <table>
+    <thead><tr><th>Código</th><th>Insumo</th><th>Unidad</th><th>Precio vigente</th><th>Última variación (pb)</th></tr></thead>
+    <tbody>
+      {% for material in materiales %}
+      <tr><td>{{ material.codigo }}</td><td><a href="/precios/materiales/{{ material.id }}">{{ material.nombre }}</a></td>
+        <td>{{ material.unidad }}</td><td>{{ material.actual_centavos | pesos if material.actual_centavos is not none else "Sin precio" }}</td>
+        <td>{{ material.variacion_pb if material.variacion_pb is not none else "—" }}</td></tr>
+      {% else %}
+      <tr><td colspan="5">Todavía no hay insumos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if editar %}
+<form method="post" action="/precios/materiales" class="card">
+  <h2>Nuevo insumo</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Código <input name="codigo" required maxlength="80"></label>
+  <label>Nombre <input name="nombre" required maxlength="240"></label>
+  <label>Unidad <input name="unidad" required maxlength="40"></label>
+  <label>Tipo <select name="tipo"><option value="material">Material</option><option value="mano_obra">Mano de obra</option><option value="equipo">Equipo</option></select></label>
+  <label>Rubro <input name="rubro" maxlength="120"></label>
+  <button class="btn">Crear insumo</button>
+</form>
+{% endif %}
+{% if indices %}
+<section class="card">
+  <h2>Índices de costo</h2>
+  <ul>{% for indice in indices %}<li>{{ indice.nombre }} · {{ indice.periodo | solo_fecha }} · {{ indice.valor }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

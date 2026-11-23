@@ -1,11 +1,11 @@
 ---
 id: T-017
 titulo: Catálogo de materiales, proveedores y precios con historial
-estado: lista
+estado: en-revision
 rama: codex/T-017-catalogo-y-precios-con-historial
 creada: 2026-11-23
 depende: T-016
-pr:
+pr: "#26"
 ---
 
 ## Objetivo
@@ -38,16 +38,21 @@ Que la empresa tenga su catálogo de materiales (y mano de obra/equipos), provee
 - Ojo con el sensor `dinero`: toda columna con monto/precio/costo/total/importe/saldo va como `*_centavos bigint`.
 
 ## Criterios de aceptación
-- [ ] CA1 Cargar dos precios para un material → el vigente es el más nuevo y `v_cambios_precio` muestra la variación correcta en puntos básicos.
-- [ ] CA2 `UPDATE` o `DELETE` sobre `precios` falla en la base (prueba directa con SQL).
-- [ ] CA3 `precios.vigente` respeta la fecha: con un precio de enero y otro de marzo, a febrero devuelve el de enero.
-- [ ] CA4 Aislamiento: materiales, precios e índices de B no aparecen para A por ninguna ruta (404 en ids ajenos).
-- [ ] CA5 Un miembro sin permiso recibe 403 al cargar precios; el cliente no ve `/precios`.
-- [ ] CA6 Sensores y suite en verde.
+- [x] CA1 Cargar dos precios para un material → el vigente es el más nuevo y `v_cambios_precio` muestra la variación correcta en puntos básicos.
+- [x] CA2 `UPDATE` o `DELETE` sobre `precios` falla en la base (prueba directa con SQL).
+- [x] CA3 `precios.vigente` respeta la fecha: con un precio de enero y otro de marzo, a febrero devuelve el de enero.
+- [x] CA4 Aislamiento: materiales, precios e índices de B no aparecen para A por ninguna ruta (404 en ids ajenos).
+- [x] CA5 Un miembro sin permiso recibe 403 al cargar precios; el cliente no ve `/precios`.
+- [x] CA6 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Importar precios desde Excel (T-021). Actualizar por índice (lo hace el agente en T-023).
 
 ## Bitácora del ejecutor
+
+- El área existente usa el código `gestion_administrativa`. El personal puede consultar el catálogo y solo admin o integrantes del área pueden cargar datos. Los clientes reciben 404 en las pantallas.
+- Los precios empatan por ID si tienen el mismo inicio de vigencia. Un argumento `date` consulta hasta el cierre del día local. La vista compara solo cotizaciones del mismo insumo y empresa.
+- FKs compuestas impiden cruzar materiales, proveedores o autores entre empresas. El trigger rechaza UPDATE, DELETE y TRUNCATE. Cada alta queda auditada en su transacción.
+- Pasaron los cuatro casos de catálogo y la suite completa. El sensor rápido quedó silencioso.
 
 ## Dictamen del auditor

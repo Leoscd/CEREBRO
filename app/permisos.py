@@ -96,6 +96,18 @@ def puede_crear_proyecto(u: dict) -> bool:
     return es_admin(u)
 
 
+def puede_gestionar_precios(u: dict, db: Connection) -> bool:
+    if es_admin(u):
+        return True
+    if es_cliente(u):
+        return False
+    return db.execute(
+        """SELECT 1 FROM usuario_areas ua JOIN areas a ON a.id=ua.area_id
+            WHERE ua.usuario_id=%s AND a.empresa_id=%s AND a.codigo='gestion_administrativa'""",
+        (u["id"], u["empresa_id"]),
+    ).fetchone() is not None
+
+
 def puede_editar_proyecto(u: dict, proyecto: dict) -> bool:
     return es_admin(u) or proyecto.get("mi_rol") == "director"
 

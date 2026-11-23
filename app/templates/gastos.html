@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Gastos · {{ proyecto.codigo }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="/proyecto/{{ proyecto.codigo }}/presupuestos">Presupuestos · {{ proyecto.nombre }}</a></p>
+<h1>Gastos del proyecto</h1>
+<section class="card">
+  <table>
+    <thead><tr><th>Fecha</th><th>Descripción</th><th>Rubro</th><th>Proveedor</th><th>Comprobante</th><th>Importe</th></tr></thead>
+    <tbody>
+      {% for gasto in gastos %}
+      <tr><td>{{ gasto.fecha | solo_fecha }}</td><td>{{ gasto.descripcion }}</td><td>{{ gasto.rubro or "—" }}</td>
+        <td>{{ gasto.proveedor or "—" }}</td>
+        <td>{% if gasto.comprobante %}<a href="/archivos/{{ gasto.archivo_id }}">{{ gasto.comprobante }}</a>{% else %}—{% endif %}</td>
+        <td>{{ gasto.importe_centavos | pesos }}</td></tr>
+      {% else %}
+      <tr><td colspan="6">Todavía no hay gastos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total gastado {{ total_centavos | pesos }}</strong></p>
+</section>
+{% if editar %}
+<form class="card stack" method="post">
+  <h2>Registrar gasto</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Fecha <input type="date" name="fecha" value="{{ hoy }}" required></label>
+  <label>Descripción <input name="descripcion" maxlength="240" required></label>
+  <label>Importe en pesos <input name="importe" inputmode="decimal" placeholder="1.234,56" maxlength="64" required></label>
+  <label>Rubro <input name="rubro" maxlength="120"></label>
+  <label>Proveedor <select name="proveedor_id"><option value="">Sin proveedor</option>
+    {% for proveedor in proveedores %}<option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>{% endfor %}
+  </select></label>
+  <label>Comprobante <select name="archivo_id"><option value="">Sin comprobante</option>
+    {% for archivo in comprobantes %}<option value="{{ archivo.id }}">{{ archivo.nombre }}</option>{% endfor %}
+  </select></label>
+  <button class="btn">Registrar gasto</button>
+</form>
+{% endif %}
+{% endblock %}

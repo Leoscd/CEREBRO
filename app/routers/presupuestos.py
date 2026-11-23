@@ -12,7 +12,7 @@ from psycopg.errors import UniqueViolation
 from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, proyectos_visibles_sql, puede_editar_presupuesto
 from app.security import check_csrf, require_user
-from app.services import auditoria, dinero, excel, presupuestos, verificador
+from app.services import auditoria, certificados, dinero, excel, gastos, presupuestos, verificador
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -92,7 +92,7 @@ def listar(codigo: str, request: Request, user=Depends(require_user), db: Connec
             WHERE empresa_id=%s AND proyecto_id=%s ORDER BY creado_en DESC,id DESC""",
         (user["empresa_id"], proyecto["id"]),
     ).fetchall()
-    return templates.TemplateResponse(request, "presupuestos.html", {
+    return templates.TemplateResponse(request, "presupuestos_registros.html", {
         "user": user, "proyecto": proyecto, "filas": filas, "hoy": hoy_local(),
         "editar": puede_editar_presupuesto(user, proyecto),
     })
@@ -128,7 +128,7 @@ def _mostrar_detalle(request, user, db, presupuesto, proyecto, calculo, hallazgo
         "SELECT id,codigo,descripcion,activo FROM apus WHERE empresa_id=%s ORDER BY codigo",
         (user["empresa_id"],),
     ).fetchall() if editar and presupuesto["estado"] == "borrador" else []
-    return templates.TemplateResponse(request, "presupuesto.html", {
+    return templates.TemplateResponse(request, "presupuesto_registros.html", {
         "user": user, "proyecto": proyecto, "editar": editar, "apus": apus,
         "calculo": calculo, "hallazgos": hallazgos,
     }, status_code=status_code)
@@ -275,3 +275,114 @@ def confirmar_excel(presupuesto_id: int, request: Request,
             raise HTTPException(409, f"Fila {fila['numero']}: el rubro o APU ya no está disponible.")
     db.commit()
     return RedirectResponse(destino, 303)
+
+
+@router.get("/proyecto/{codigo}/gastos")
+def listar_gastos(codigo: str, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _proyecto(db, user, codigo)
+    empresa = user["empresa_id"]
+    editar_gastos = puede_editar_presupuesto(user, proyecto)
+    filas = gastos.listar(db, empresa, proyecto["id"])
+    proveedores = comprobantes = []
+    if editar_gastos:
+        proveedores = db.execute(
+            "SELECT id,nombre FROM proveedores WHERE empresa_id=%s AND activo ORDER BY nombre,id", (empresa,),
+        ).fetchall()
+        comprobantes = db.execute(
+            """SELECT id,nombre FROM archivos WHERE empresa_id=%s AND proyecto_id=%s AND en_papelera_en IS NULL
+                ORDER BY nombre,id""", (empresa, proyecto["id"]),
+        ).fetchall()
+    return templates.TemplateResponse(request, "gastos.html", {
+        "user": user, "proyecto": proyecto, "editar": editar_gastos, "gastos": filas, "hoy": hoy_local(),
+        "proveedores": proveedores, "comprobantes": comprobantes,
+        "total_centavos": dinero.sumar(fila["importe_centavos"] for fila in filas),
+    })
+
+
+@router.post("/proyecto/{codigo}/gastos")
+def registrar_gasto(codigo: str, request: Request, fecha: date = Form(), descripcion: str = Form(max_length=240),
+                    importe: str = Form(max_length=64), proveedor_id: int | None = Form(None, gt=0, le=2**63-1),
+                    archivo_id: int | None = Form(None, gt=0, le=2**63-1), rubro: str = Form("", max_length=120),
+                    user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _proyecto(db, user, codigo)
+    exigir(puede_editar_presupuesto(user, proyecto))
+    try:
+        centavos = dinero.leer_pesos(importe)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    if not 0 < centavos <= 2**63 - 1:
+        raise HTTPException(400, "Ingresá un importe positivo dentro del rango admitido.")
+    gastos.registrar(db, user, proyecto, fecha, _texto(descripcion, "la descripción"), centavos,
+                     proveedor_id=proveedor_id, archivo_id=archivo_id, rubro=rubro.replace("\x00", " ").strip(),
+                     request=request)
+    db.commit()
+    return RedirectResponse(f"/proyecto/{codigo}/gastos", 303)
+
+
+def _pantalla_certificados(db, user, request, presupuesto_id, certificado_id=None):
+    presupuesto, proyecto = _obtener(db, user, presupuesto_id)
+    certificados.exigir_emitido(presupuesto)
+    empresa = user["empresa_id"]
+    filas = certificados.listar(db, empresa, presupuesto_id)
+    certificado = next((c for c in filas if c["id"] == certificado_id), None)
+    if certificado_id is not None and certificado is None:
+        raise HTTPException(404, "Certificado no encontrado")
+    editar_certificado = puede_editar_presupuesto(user, proyecto)
+    return templates.TemplateResponse(request, "certificados.html", {
+        "user": user, "presupuesto": presupuesto, "filas": filas, "certificado": certificado,
+        "editar": editar_certificado, "mes": hoy_local().strftime("%Y-%m"),
+        "base_items": certificados.avances_base(db, empresa, presupuesto_id) if editar_certificado else [],
+    })
+
+
+@router.get(_DETALLE + "/certificados")
+def listar_certificados(presupuesto_id: int, request: Request,
+                        user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    return _pantalla_certificados(db, user, request, presupuesto_id)
+
+
+@router.get(_DETALLE + "/certificados/{certificado_id:int}")
+def ver_certificado(presupuesto_id: int, certificado_id: int, request: Request,
+                    user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    return _pantalla_certificados(db, user, request, presupuesto_id, certificado_id)
+
+
+async def _avances_certificado(request: Request):
+    avances = {}
+    for campo, valor in (await request.form()).multi_items():
+        if not campo.startswith("avance_"):
+            continue
+        try:
+            item_id, avance = int(campo.removeprefix("avance_")), int(valor)
+        except (TypeError, ValueError) as error:
+            raise HTTPException(400, "Ingresá avances acumulados en puntos básicos enteros.") from error
+        if item_id in avances or not 0 <= avance <= 10000:
+            raise HTTPException(400, "Cada ítem admite un solo avance de 0 a 10000 puntos básicos.")
+        avances[item_id] = avance
+    return avances
+
+
+@router.post(_DETALLE + "/certificados")
+def crear_certificado(presupuesto_id: int, request: Request, periodo: str = Form(max_length=10),
+                      user=Depends(check_csrf), avances=Depends(_avances_certificado),
+                      db: Connection = Depends(db_dependency)):
+    presupuesto = _editable(db, user, presupuesto_id, solo_borrador=False)
+    certificados.exigir_emitido(presupuesto)
+    try:
+        mes = date.fromisoformat(periodo + "-01" if len(periodo) == 7 else periodo)
+    except ValueError as error:
+        raise HTTPException(400, "Ingresá el período en formato AAAA-MM.") from error
+    if mes.day != 1:
+        raise HTTPException(400, "El período debe empezar el primer día del mes.")
+    cid = certificados.crear(db, user, presupuesto, mes, avances, request=request)
+    db.commit()
+    return RedirectResponse(f"/presupuestos/{presupuesto_id}/certificados/{cid}", 303)
+
+
+@router.post(_DETALLE + "/certificados/{certificado_id:int}/emitir")
+def emitir_certificado(presupuesto_id: int, certificado_id: int, request: Request,
+                       user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    presupuesto = _editable(db, user, presupuesto_id, solo_borrador=False)
+    certificados.emitir(db, user, presupuesto, certificado_id, request=request)
+    db.commit()
+    return RedirectResponse(f"/presupuestos/{presupuesto_id}/certificados/{certificado_id}", 303)

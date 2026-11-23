@@ -1,0 +1,8 @@
+{% extends "presupuesto.html" %}
+{% block content %}
+{{ super() }}
+<p><a href="/proyecto/{{ proyecto.codigo }}/gastos">Gastos del proyecto</a></p>
+{% if calculo.presupuesto.estado == "emitido" %}
+<p><a href="/presupuestos/{{ calculo.presupuesto.id }}/certificados">Certificados de avance</a></p>
+{% endif %}
+{% endblock %}

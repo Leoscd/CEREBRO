@@ -1,11 +1,11 @@
 ---
 id: T-016
 titulo: Servicio de dinero en centavos
-estado: en-curso
+estado: en-revision
 rama: codex/T-016-dinero-en-centavos
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#25"
 ---
 
 ## Objetivo

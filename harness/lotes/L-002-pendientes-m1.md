@@ -2,7 +2,7 @@
 id: L-002
 titulo: Pendientes de la auditoría de M1
 hito: M1
-estado: abierto
+estado: cerrado        # 5/5 mergeadas el 2026-11-23 (PRs #16-#19, #21)
 etapa_activa: 1
 ---
 

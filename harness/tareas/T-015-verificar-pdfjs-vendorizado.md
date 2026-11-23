@@ -1,7 +1,7 @@
 ---
 id: T-015
 titulo: Verificar el pdf.js vendorizado contra el paquete oficial
-estado: en-revision
+estado: hecha
 rama: codex/T-015-verificar-pdfjs-vendorizado
 creada: 2026-11-22
 depende: —
@@ -49,3 +49,4 @@ paquete oficial `pdfjs-dist@6.5.438` de npm (más de 100 mil líneas que nadie r
 - El CI del PR #21 ejecutó y aprobó el paso «Integridad de vendor (pdf.js contra npm)». [Corrida de GitHub Actions](https://github.com/Leoscd/CEREBRO/actions/runs/45085361794)
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-23). 206/206 contra pdfjs-dist@6.5.438 (sha512 fijado, sin redirecciones, tar en memoria). La diferencia de pdf.mjs era INTERNAL_EVT = crypto.randomUUID() por compilación (release de GitHub vs npm); se dejó el de npm. Corre en cada CI. Merge: #21.

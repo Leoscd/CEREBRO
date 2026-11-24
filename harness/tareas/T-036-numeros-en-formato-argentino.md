@@ -1,11 +1,11 @@
 ---
 id: T-036
 titulo: Números y porcentajes en formato argentino en precios y presupuestos
-estado: en-curso
+estado: en-revision
 rama: codex/T-036-numeros-en-formato-argentino
 creada: 2026-11-24
 depende: T-035
-pr:
+pr: "#48"
 ---
 
 ## Objetivo

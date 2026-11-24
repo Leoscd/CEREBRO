@@ -1,11 +1,11 @@
 ---
 id: T-032
 titulo: Notas de obra, pedidos, stock y alertas de materiales
-estado: en-curso
+estado: en-revision
 rama: codex/T-032-notas-pedidos-y-alertas
 creada: 2026-11-24
 depende: T-031
-pr:
+pr: "#45"
 ---
 
 ## Objetivo

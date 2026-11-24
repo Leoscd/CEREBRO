@@ -1,0 +1,40 @@
+---
+id: T-033
+titulo: Bitácora del proyecto y resumen de obra
+estado: lista
+rama: codex/T-033-bitacora-y-resumen-de-obra
+creada: 2026-11-24
+depende: T-032
+pr:
+---
+
+## Objetivo
+Una línea de tiempo única de lo que pasa en la obra (partes, notas, hitos, avances, pedidos) y un resumen de una pantalla
+con lo importante: avance físico y económico, atrasos, alertas y notas abiertas.
+
+## Contexto mínimo
+- Plan: Modelo de datos → Obra (`bitacora`). **Portar** `resumen_obra` y las consultas de `D:\APLICACIONES\SAEZ-SANCHEZ\obra-report-w\obra_bot\herramientas.py`
+  y sus pruebas en `tests/test_consultas.py` ("resumen marca atraso crítico y notas", "últimos reportes del más nuevo al más viejo", "buscar en reportes ignora acentos").
+- Servicios de T-028 a T-032. Auditoría (`app/services/auditoria.py`).
+
+## Alcance
+- Tocar: `app/db/migraciones/0017_bitacora.sql` (si hace falta una tabla; si alcanza con una vista o consulta, mejor), `app/services/bitacora.py` (nuevo),
+  `app/services/resumen_obra.py` (nuevo), `app/routers/obra.py`, plantillas, `tests/test_bitacora.py` (nuevo).
+
+## Diseño pedido
+- `bitacora(db, usuario, proyecto, desde, hasta, tipos)` → eventos ordenados (más nuevo primero) con tipo, fecha, título y enlace. Filtros por tipo y fechas.
+- `resumen_obra(db, usuario, proyecto, hoy)` → avance físico y económico, previsto vs real, tareas atrasadas (críticas primero), alertas de materiales, notas abiertas con plazo vencido, último parte.
+- `buscar_en_partes(texto)` sin distinguir acentos ni mayúsculas.
+- Estos servicios son los que va a usar el agente Obra (T-034): devuelven datos, no HTML.
+
+## Criterios de aceptación
+- [ ] CA1 Pruebas portadas del resumen y de la búsqueda (listalas con su origen).
+- [ ] CA2 La bitácora de un proyecto nunca trae eventos de otro proyecto o empresa (prueba con datos en ambos).
+- [ ] CA3 Sensores y suite en verde.
+
+## Fuera de alcance
+- Informe semanal automático (Documentador, más adelante).
+
+## Bitácora del ejecutor
+
+## Dictamen del auditor

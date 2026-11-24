@@ -1,11 +1,11 @@
 ---
 id: T-028
 titulo: Cronograma de obra con avance previsto y real
-estado: en-curso
+estado: en-revision
 rama: codex/T-028-cronograma-de-obra
 creada: 2026-11-24
 depende: —
-pr:
+pr: "#41"
 ---
 
 ## Objetivo

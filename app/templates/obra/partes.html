@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Partes diarios · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="{{ ruta }}">Obra · {{ proyecto.nombre }}</a></p>
+<h1>Partes diarios</h1>
+{% if editar %}
+<form method="post" action="{{ ruta }}/partes/hoy">
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <button class="btn">Abrir el parte de hoy</button>
+</form>
+{% endif %}
+<section class="card">
+  {% if partes %}
+  <table>
+    <thead><tr><th>Parte</th><th>Fecha</th><th>DT</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% for parte in partes %}
+      <tr>
+        <td><a href="{{ ruta }}/partes/{{ parte.id }}">{{ ("N.º " ~ parte.numero) if parte.numero else "Ver borrador" }}</a></td>
+        <td>{{ parte.fecha | solo_fecha }}</td><td>{{ parte.dt_nombre }}</td><td>{{ parte.estado | capitalize }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Todavía no hay partes para esta obra.</p>
+  {% endif %}
+</section>
+{% endblock %}

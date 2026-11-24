@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">{% endmacro %}
+{% macro quitar(seccion, indice) %}
+{% if editable %}
+<form method="post" action="{{ destino }}/secciones/{{ seccion }}">
+  {{ csrf() }}<input type="hidden" name="indice" value="{{ indice }}">
+  <button class="btn btn-ghost">Quitar</button>
+</form>
+{% endif %}
+{% endmacro %}
+{% macro opciones_tarea() %}
+{% for tarea in tareas %}<option value="{{ tarea.id }}">{{ tarea.codigo }} · {{ tarea.nombre }}</option>{% endfor %}
+{% endmacro %}
+{% block title %}Parte diario · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+{% set datos = parte.datos %}
+<p><a href="{{ ruta }}/partes">Partes diarios · {{ proyecto.nombre }}</a></p>
+<h1>{{ ("Parte N.º " ~ parte.numero) if parte.numero else "Borrador del parte diario" }}</h1>
+<p>{{ parte.fecha | solo_fecha }}{% if parte.confirmado_en %} · Confirmado {{ parte.confirmado_en | fecha }}{% endif %}</p>
+<div class="stack">
+  <details id="condiciones" class="card">
+    <summary>Clima y terreno</summary>
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/condiciones" class="stack">
+      {{ csrf() }}
+      <label>Observaciones <textarea name="texto" maxlength="1500">{{ datos.condiciones.texto or "" }}</textarea></label>
+      <label><input type="checkbox" name="confirmado" value="1" {% if datos.condiciones.confirmado %}checked{% endif %}> Revisé las condiciones</label>
+      <button class="btn">Guardar condiciones</button>
+    </form>
+    {% else %}<p>{{ datos.condiciones.texto or "Sin observaciones" }}</p>{% endif %}
+  </details>
+
+  <details id="jornada" class="card">
+    <summary>Jornada</summary>
+    {% set tipos = {"completa": "Completa", "parcial": "Parcial", "no_laborable": "No laborable"} %}
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/jornada" class="stack">
+      {{ csrf() }}
+      <label>Tipo de jornada <select name="tipo" required>
+        <option value="">Elegí un tipo</option>
+        {% for valor, texto in tipos.items() %}<option value="{{ valor }}" {% if datos.jornada.tipo == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}
+      </select></label>
+      <label>Detalle <textarea name="detalle" maxlength="1000">{{ datos.jornada.detalle or "" }}</textarea></label>
+      <button class="btn">Guardar jornada</button>
+    </form>
+    {% else %}<p>{{ tipos.get(datos.jornada.tipo, "Sin registrar") }} {{ datos.jornada.detalle or "" }}</p>{% endif %}
+  </details>
+
+  <details id="personal" class="card">
+    <summary>Personal ({{ datos.personal | length }})</summary>
+    <ul>{% for persona in datos.personal %}
+      <li>{{ persona.empresa }} · {{ persona.categoria }} · {{ persona.cantidad }} {{ quitar("personal", loop.index0) }}</li>
+    {% endfor %}</ul>
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/personal" class="stack">
+      {{ csrf() }}
+      <label>Empresa <input name="empresa" maxlength="200" required></label>
+      <label>Categoría UOCRA <input name="categoria" maxlength="160" required></label>
+      <label>Cantidad de personas <input name="cantidad" type="number" min="1" max="100000" required></label>
+      <button class="btn">Agregar personal</button>
+    </form>
+    {% endif %}
+  </details>
+
+  <details id="avances" class="card">
+    <summary>Avances ({{ datos.avances | length }})</summary>
+    <ul>{% for avance in datos.avances %}
+      <li>{{ avance.tarea }} · {{ "%.2f" | format(avance.avance_pb / 100) | replace(".", ",") }} %
+      {{ avance.detalle }} {{ quitar("avances", loop.index0) }}</li>
+    {% endfor %}</ul>
+    {% if editable and tareas %}
+    <form method="post" action="{{ destino }}/secciones/avances" class="stack">
+      {{ csrf() }}
+      <label>Tarea <select name="tarea_id" required>{{ opciones_tarea() }}</select></label>
+      <label>Avance acumulado (0 a 10000 pb) <input name="avance_pb" type="number" min="0" max="10000" required></label>
+      <label>Detalle <textarea name="detalle" maxlength="1500"></textarea></label>
+      <button class="btn">Guardar avance</button>
+    </form>
+    {% elif editable %}<p><a href="{{ ruta }}">Cargá una tarea en el cronograma</a></p>{% endif %}
+  </details>
+
+  <details class="card">
+    <summary>Materiales</summary>
+    {% for seccion, texto in [("ingresos", "Ingresos"), ("faltantes", "Faltantes"), ("stock", "Stock")] %}
+    <details id="{{ seccion }}"><summary>{{ texto }} ({{ datos.materiales[seccion] | length }})</summary>
+      <ul>{% for material in datos.materiales[seccion] %}
+        <li>{{ material.material }} {{ material.cantidad or "" }} {{ material.unidad }} {{ material.detalle }}
+        {{ quitar(seccion, loop.index0) }}</li>
+      {% endfor %}</ul>
+      {% if editable %}
+      <form method="post" action="{{ destino }}/secciones/{{ seccion }}" class="stack">
+        {{ csrf() }}
+        <label>Material <input name="material" maxlength="200" required></label>
+        <label>Cantidad <input name="cantidad" inputmode="decimal" maxlength="20" {% if seccion != "faltantes" %}required{% endif %}></label>
+        <label>Unidad <input name="unidad" maxlength="40" {% if seccion != "faltantes" %}required{% endif %}></label>
+        <label>Detalle <textarea name="detalle" maxlength="600"></textarea></label>
+        <button class="btn">Guardar material</button>
+      </form>
+      {% endif %}
+    </details>
+    {% endfor %}
+  </details>
+
+  <details id="equipos" class="card">
+    <summary>Equipos ({{ datos.equipos | length }})</summary>
+    <ul>{% for equipo in datos.equipos %}
+      <li>{{ equipo.equipo }} {{ equipo.detalle }} {{ quitar("equipos", loop.index0) }}</li>
+    {% endfor %}</ul>
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/equipos" class="stack">
+      {{ csrf() }}
+      <label>Equipo <input name="equipo" maxlength="200" required></label>
+      <label>Detalle <textarea name="detalle" maxlength="600"></textarea></label>
+      <button class="btn">Agregar equipo</button>
+    </form>
+    {% endif %}
+  </details>
+
+  <details id="hys" class="card">
+    <summary>Higiene y seguridad</summary>
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/hys" class="stack">
+      {{ csrf() }}
+      <label>Uso de EPP <select name="epp_ok" required>
+        <option value="">Elegí una opción</option>
+        <option value="1" {% if datos.hys.epp_ok is sameas true %}selected{% endif %}>Sí</option>
+        <option value="0" {% if datos.hys.epp_ok is sameas false %}selected{% endif %}>No</option>
+      </select></label>
+      <label>Visitas <textarea name="visitas" maxlength="1000">{{ datos.hys.visitas or "" }}</textarea></label>
+      <label>Incidentes <textarea name="incidentes" maxlength="1000">{{ datos.hys.incidentes or "" }}</textarea></label>
+      <button class="btn">Guardar higiene y seguridad</button>
+    </form>
+    {% else %}
+    {% if "epp_ok" in datos.hys %}<p>Uso de EPP · {{ "Sí" if datos.hys.epp_ok else "No" }}</p>{% endif %}
+    {% if datos.hys.visitas %}<p>{{ datos.hys.visitas }}</p>{% endif %}
+    {% if datos.hys.incidentes %}<p>{{ datos.hys.incidentes }}</p>{% endif %}
+    {% endif %}
+  </details>
+
+  <details id="fotos" class="card">
+    <summary>Fotos ({{ fotos | length }})</summary>
+    {% for foto in fotos %}
+    <figure>
+      <a href="{{ destino }}/fotos/{{ foto.id }}"><img src="{{ destino }}/fotos/{{ foto.id }}" alt="{{ foto.descripcion or 'Foto de obra' }}" width="240" loading="lazy"></a>
+      <figcaption>{{ foto.descripcion }} {{ foto.tarea or "" }}</figcaption>
+      {% if editable %}
+      <form method="post" action="{{ destino }}/fotos/{{ foto.id }}/quitar">{{ csrf() }}<button class="btn btn-ghost">Quitar foto</button></form>
+      {% endif %}
+    </figure>
+    {% endfor %}
+    {% if editable %}
+    <form method="post" action="{{ destino }}/fotos" enctype="multipart/form-data" class="stack">
+      {{ csrf() }}
+      <label>Foto <input type="file" name="foto" accept="image/*" capture="environment" required></label>
+      <label>Descripción <input name="descripcion" maxlength="600"></label>
+      <label>Tarea <select name="tarea_id"><option value="">Sin vincular</option>{{ opciones_tarea() }}</select></label>
+      <button class="btn">Agregar foto</button>
+    </form>
+    {% endif %}
+  </details>
+
+  <details id="resumen" class="card">
+    <summary>Observaciones</summary>
+    {% if editable %}
+    <form method="post" action="{{ destino }}/secciones/resumen" class="stack">
+      {{ csrf() }}
+      <label>Observaciones del día <textarea name="texto" maxlength="5000">{{ datos.resumen }}</textarea></label>
+      <button class="btn">Guardar observaciones</button>
+    </form>
+    {% else %}<p>{{ datos.resumen or "Sin observaciones" }}</p>{% endif %}
+  </details>
+  {% if editable %}
+  <section class="card">
+    {% if faltantes %}
+    <h2>Pendientes para confirmar</h2>
+    <ul>{% for item in faltantes %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% else %}
+    <form method="post" action="{{ destino }}/confirmar">{{ csrf() }}<button class="btn">Confirmar parte</button></form>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

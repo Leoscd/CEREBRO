@@ -9,6 +9,7 @@
 <div class="grid-2">
   <div class="card">
     <h3>Ficha</h3>
+    {% if user.rol_empresa != "cliente" %}<p><a href="/proyecto/{{ p.codigo }}/obra">Seguimiento de obra</a></p>{% endif %}
     {% if user.rol_empresa != "cliente" %}<p><a href="/proyecto/{{ p.codigo }}/presupuestos">Presupuestos del proyecto</a></p>{% endif %}
     <dl class="ficha">
       <dt>Cliente</dt><dd>{{ p.cliente_nombre or '—' }}</dd>

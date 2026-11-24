@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Importar cronograma · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="{{ destino }}">Volver al cronograma</a></p>
+<h1>Vista previa del cronograma</h1>
+<ul class="card">
+  {% for fila in filas %}
+  <li>Fila {{ fila.numero }} · {% if fila.error %}{{ fila.error }}{% else %}
+    {{ fila.datos.tarea.codigo }} · {{ fila.datos.tarea.nombre }}
+    ({{ fila.datos.tarea.inicio | solo_fecha }} — {{ fila.datos.tarea.fin | solo_fecha }})
+    {% if fila.datos.material %} · {{ fila.datos.material.nombre }}{% endif %}
+    {% endif %}</li>
+  {% endfor %}
+</ul>
+{% if confirmacion %}
+<form method="post" action="{{ destino }}/excel/confirmar" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <input type="hidden" name="confirmacion" value="{{ confirmacion }}">
+  <button class="btn">Confirmar importación</button>
+</form>
+{% endif %}
+{% endblock %}

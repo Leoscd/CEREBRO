@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Obra · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+{% macro pct(pb) %}{{ "%.2f"|format(pb / 100)|replace(".", ",") }} %{% endmacro %}
+<p><a href="/proyecto/{{ proyecto.codigo }}">{{ proyecto.nombre }}</a></p>
+<h1>Cronograma de obra</h1>
+<div class="kpis">
+  <div class="card"><strong>{{ pct(obra.previsto_pb) }}</strong> previsto</div>
+  <div class="card"><strong>{{ pct(obra.real_pb) }}</strong> real</div>
+  <div class="card"><strong>{{ obra.economico_centavos | pesos }}</strong> avance económico
+    ({{ pct(obra.economico_pb) }} de los ítems vinculados)</div>
+</div>
+{% block navegacion_obra %}{% endblock %}
+<section class="card">
+  <table>
+    <thead><tr><th>Tarea</th><th>Fechas</th><th>Previsto</th><th>Real</th><th>Atraso</th><th>Avance económico</th></tr></thead>
+    <tbody>
+    {% for tarea in obra.tareas %}
+    <tr id="tarea-{{ tarea.id }}">
+      <td>{{ tarea.codigo }} · {{ tarea.nombre }}{% if tarea.critica %} · Crítica{% endif %}</td>
+      <td>{{ tarea.inicio | solo_fecha }} — {{ tarea.fin | solo_fecha }}</td>
+      <td><progress value="{{ tarea.previsto_pb }}" max="10000" aria-label="Avance previsto"></progress> {{ pct(tarea.previsto_pb) }}</td>
+      <td><progress value="{{ tarea.real_pb }}" max="10000" aria-label="Avance real"></progress> {{ pct(tarea.real_pb) }}</td>
+      <td>{% if tarea.atraso_pb %}<strong>{{ pct(tarea.atraso_pb) }}{% if tarea.critica %} · Crítico{% endif %}</strong>{% else %}—{% endif %}</td>
+      <td>{% if tarea.item_presupuesto_id %}{{ tarea.economico_centavos | pesos }}{% else %}—{% endif %}</td>
+    </tr>
+    {% if editar %}
+    <tr><td colspan="6"><details><summary>Registrar avance o material de {{ tarea.nombre }}</summary>
+      <form method="post" action="{{ ruta }}/tareas/{{ tarea.id }}/avance" class="stack">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <label>Fecha <input type="date" name="fecha" value="{{ hoy }}" required></label>
+        <label>Avance acumulado (0 a 10000 pb)
+          <input type="number" name="avance_pb" min="0" max="10000" step="1" value="{{ tarea.real_pb }}" required></label>
+        <button class="btn">Guardar avance</button>
+      </form>
+      <form method="post" action="{{ ruta }}/tareas/{{ tarea.id }}/materiales" class="stack">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <label>Material <input name="nombre" maxlength="200" required></label>
+        <label>Cantidad <input type="number" name="cantidad" step="0.0001" min="0.0001" required></label>
+        <label>Unidad <input name="unidad" maxlength="40" required></label>
+        <label>Plazo de entrega en días hábiles <input type="number" name="plazo_dias" min="0" max="3650" required></label>
+        <button class="btn">Agregar material</button>
+      </form>
+    </details></td></tr>
+    {% endif %}
+    {% else %}<tr><td colspan="6">Todavía no hay tareas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% if editar %}
+<details class="card"><summary>Nueva tarea</summary>
+  <form method="post" action="{{ ruta }}/tareas" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Código <input name="clave" maxlength="80" required></label>
+    <label>Tarea <input name="nombre" maxlength="240" required></label>
+    <label>Rubro <input name="rubro" maxlength="120"></label>
+    <label>Inicio <input type="date" name="inicio" required></label>
+    <label>Fin <input type="date" name="fin" required></label>
+    <label><input type="checkbox" name="critica" value="true"> Tarea crítica</label>
+    <label>Ítem emitido <select name="item"><option value="">Sin ítem vinculado</option>
+      {% for item in items %}<option value="{{ item.id }}">#{{ item.id }} · {{ item.presupuesto }} · {{ item.descripcion }}</option>{% endfor %}
+    </select></label>
+    <button class="btn">Crear tarea</button>
+  </form>
+</details>
+<details class="card"><summary>Importar cronograma</summary>
+  <p><a href="{{ ruta }}/excel/plantilla.xlsx">Descargar plantilla Excel</a></p>
+  <form method="post" action="{{ ruta }}/excel/vista-previa" enctype="multipart/form-data" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Planilla <input type="file" name="archivo" accept=".xlsx" required></label>
+    <button class="btn">Ver vista previa</button>
+  </form>
+</details>
+<details class="card"><summary>Agregar feriado de la empresa</summary>
+  <form method="post" action="{{ ruta }}/feriados" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <label>Fecha <input type="date" name="fecha" required></label>
+    <label>Nombre <input name="nombre" maxlength="200" required></label>
+    <button class="btn">Guardar feriado</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

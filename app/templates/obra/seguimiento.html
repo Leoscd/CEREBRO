@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">{% endmacro %}
+{% block title %}Materiales y notas · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+{% set estados = {"pendiente": "Pendiente", "pedido": "Pedido", "recibido": "Recibido", "no_aplica": "No aplica"} %}
+{% set niveles = {"critico": "Crítico", "rojo": "Rojo", "amarillo": "Amarillo", "verde": "Verde"} %}
+<p><a href="{{ ruta }}">Obra · {{ proyecto.nombre }}</a></p>
+<h1>Materiales y notas</h1>
+<section class="card" id="alertas">
+  <h2>Alertas de materiales</h2>
+  <ul>{% for alerta in alertas %}
+    <li><strong>{{ niveles[alerta.nivel] }}</strong> · {{ alerta.material }} · {{ alerta.cantidad }} {{ alerta.unidad }}
+      para {{ alerta.tarea }} · pedir antes del {{ alerta.fecha_limite | solo_fecha }}</li>
+  {% else %}<li>Sin alertas de materiales.</li>{% endfor %}</ul>
+</section>
+<section class="card" id="notas">
+  <h2>Notas de obra</h2>
+  {% for nota in notas | sort(attribute="estado") %}
+  <details id="nota-{{ nota.id }}">
+    <summary>{{ tipos_nota[nota.tipo] }} N.º {{ nota.numero }} · {{ nota.asunto }} · {{ nota.estado | capitalize }}
+      {% if nota.plazo and nota.estado == "abierta" %}
+        {% if nota.vencida %}· Vencida hace {{ -nota.dias_plazo }} días{% else %}· {{ nota.dias_plazo }} días de plazo{% endif %}
+      {% endif %}</summary>
+    <p>{{ nota.fecha | solo_fecha }} · {{ nota.emisor }} → {{ nota.destinatario }}</p>
+    <p>{{ nota.texto }}</p>
+    {% if nota.reporte_id %}<p><a href="{{ ruta }}/partes/{{ nota.reporte_id }}">Ver parte asociado</a></p>{% endif %}
+    {% if editar %}
+    <form method="post" action="{{ destino }}/notas/{{ nota.id }}/estado" class="fila-form">
+      {{ csrf() }}
+      <select name="estado" aria-label="Estado de la nota">
+        {% for estado in estados_nota %}<option value="{{ estado }}" {% if nota.estado == estado %}selected{% endif %}>{{ estado | capitalize }}</option>{% endfor %}
+      </select>
+      <button class="btn">Cambiar estado</button>
+    </form>
+    {% endif %}
+  </details>
+  {% else %}<p>Sin notas registradas.</p>{% endfor %}
+  {% if editar %}
+  <details><summary>Nueva nota</summary>
+    <form method="post" action="{{ destino }}/notas" class="stack">
+      {{ csrf() }}
+      <label>Tipo <select name="tipo">{% for codigo, nombre in tipos_nota.items() %}<option value="{{ codigo }}">{{ nombre }}</option>{% endfor %}</select></label>
+      <label>Fecha <input type="date" name="fecha" value="{{ hoy }}" required></label>
+      <label>Emisor <input name="emisor" maxlength="200" required></label>
+      <label>Destinatario <input name="destinatario" maxlength="200" required></label>
+      <label>Asunto <input name="asunto" maxlength="240" required></label>
+      <label>Texto <textarea name="texto" maxlength="8000" required></textarea></label>
+      <label>Plazo <input type="date" name="plazo"></label>
+      <label>Parte diario <select name="reporte"><option value="">Sin parte asociado</option>
+        {% for parte in partes %}<option value="{{ parte.id }}">{{ parte.fecha | solo_fecha }} · {{ parte.dt_nombre }} · {{ parte.numero or "Borrador" }}</option>{% endfor %}
+      </select></label>
+      <button class="btn">Guardar nota</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+<section class="card" id="pedidos">
+  <h2>Pedidos de materiales</h2>
+  {% for estado, grupo in pedidos.items() %}
+  {% if grupo %}
+    <h3>{{ estados[estado] }}</h3>
+    <ul>{% for pedido in grupo %}
+      <li>{{ pedido.material }} · {{ pedido.tarea }}
+        {% if pedido.fecha_entrega %}· Entrega {{ pedido.fecha_entrega | solo_fecha }}{% endif %}
+        {% if pedido.entrega_vencida %}<strong>· Entrega vencida</strong>{% endif %}</li>
+    {% endfor %}</ul>
+  {% endif %}
+  {% endfor %}
+  {% if editar %}{% for material in materiales %}
+  <details><summary>{{ "Actualizar" if material.estado else "Registrar" }} pedido de {{ material.material }} · {{ material.tarea }}</summary>
+    <form method="post" action="{{ destino }}/pedidos/{{ material.material_id }}" class="stack">
+      {{ csrf() }}
+      <label>Estado <select name="estado">
+        {% for estado, titulo in estados.items() %}<option value="{{ estado }}" {% if material.estado == estado %}selected{% endif %}>{{ titulo }}</option>{% endfor %}
+      </select></label>
+      <label>Fecha <input name="fecha" type="date" value="{{ material.fecha or hoy }}" required></label>
+      <label>Fecha de entrega <input name="fecha_entrega" type="date" value="{{ material.fecha_entrega or '' }}"></label>
+      <button class="btn">Guardar pedido</button>
+    </form>
+  </details>
+  {% else %}<p>Agregá materiales en el cronograma para registrar pedidos.</p>{% endfor %}{% endif %}
+</section>
+<section class="card" id="stock">
+  <h2>Stock vigente</h2>
+  <ul>{% for saldo in stock %}
+    <li>{{ saldo.material }} · {{ saldo.cantidad }} {{ saldo.unidad }} · {{ saldo.fecha | solo_fecha }}</li>
+  {% else %}<li>Sin stock declarado.</li>{% endfor %}</ul>
+  {% if editar %}
+  <details><summary>Declarar stock</summary>
+    <form method="post" action="{{ destino }}/stock" class="stack">
+      {{ csrf() }}
+      <label>Material <input name="material" maxlength="200" required></label>
+      <label>Unidad <input name="unidad" maxlength="40" required></label>
+      <label>Cantidad disponible <input name="cantidad" inputmode="decimal" maxlength="20" required></label>
+      <button class="btn">Guardar stock</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endblock %}

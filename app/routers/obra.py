@@ -12,7 +12,7 @@ from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, puede_registrar_obra
 from app.routers.presupuestos import _texto
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, cronograma, excel, jobs, partes, transcripcion
+from app.services import almacen, auditoria, cronograma, excel, jobs, materiales_obra, notas_obra, partes, transcripcion
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -165,6 +165,87 @@ def confirmar_parte(codigo: str, parte_id: int, request: Request, user=Depends(c
     partes.confirmar(db, user, proyecto, parte_id, request=request)
     db.commit()
     return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}", 303)
+
+
+def _ruta_seguimiento(proyecto):
+    return f"{_ruta(proyecto)}/seguimiento"
+
+
+@router.get("/seguimiento")
+def seguimiento(codigo: str, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    hoy = hoy_local()
+    return templates.TemplateResponse(request, "obra/seguimiento.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "destino": _ruta_seguimiento(proyecto), "hoy": hoy,
+        "editar": puede_registrar_obra(user, proyecto), "notas": notas_obra.listar(db, proyecto, hoy),
+        "tipos_nota": notas_obra.TIPOS, "estados_nota": notas_obra.ESTADOS,
+        "alertas": materiales_obra.alertas(db, proyecto, hoy), "pedidos": materiales_obra.pedidos(db, proyecto, hoy),
+        "materiales": materiales_obra.materiales_planificados(db, proyecto), "stock": materiales_obra.stock(db, proyecto, hoy),
+        "partes": partes.listar(db, proyecto),
+    })
+
+
+def _fecha_opcional(texto):
+    try:
+        return date.fromisoformat(texto) if texto.strip() else None
+    except ValueError as error:
+        raise HTTPException(400, "Ingresá una fecha válida.") from error
+
+
+@router.post("/seguimiento/notas")
+def guardar_nota(codigo: str, request: Request, tipo: str = Form(max_length=24), fecha: date = Form(),
+                 emisor: str = Form(max_length=200), destinatario: str = Form(max_length=200),
+                 asunto: str = Form(max_length=240), texto: str = Form(max_length=8000),
+                 plazo: str = Form("", max_length=10), reporte: str = Form("", max_length=20),
+                 user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    try:
+        reporte_id = cronograma._entero(reporte, 1, 2**63 - 1) if reporte.strip() else None
+    except ValueError as error:
+        raise HTTPException(400, "Elegí un parte válido.") from error
+    notas_obra.crear(db, user, proyecto, {
+        "tipo": tipo, "fecha": fecha, "emisor": _texto(emisor, "el emisor"),
+        "destinatario": _texto(destinatario, "el destinatario"), "asunto": _texto(asunto, "el asunto"),
+        "texto": _texto(texto, "el texto"), "plazo": _fecha_opcional(plazo), "reporte_id": reporte_id,
+    }, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_seguimiento(proyecto)}#notas", 303)
+
+
+@router.post("/seguimiento/notas/{nota_id}/estado")
+def estado_nota(codigo: str, nota_id: int, request: Request, estado: str = Form(max_length=24),
+                user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    notas_obra.cambiar_estado(db, user, proyecto, nota_id, estado, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_seguimiento(proyecto)}#nota-{nota_id}", 303)
+
+
+@router.post("/seguimiento/pedidos/{material_id}")
+def estado_pedido(codigo: str, material_id: int, request: Request, estado: str = Form(max_length=24),
+                  fecha: str = Form("", max_length=10), fecha_entrega: str = Form("", max_length=10),
+                  user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    materiales_obra.guardar_pedido(db, user, proyecto, material_id, estado, _fecha_opcional(fecha) or hoy_local(),
+                                  _fecha_opcional(fecha_entrega), request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_seguimiento(proyecto)}#pedidos", 303)
+
+
+@router.post("/seguimiento/stock")
+def registrar_stock(codigo: str, request: Request, material: str = Form(max_length=200), unidad: str = Form(max_length=40),
+                    cantidad: str = Form(max_length=20), user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    try:
+        saldo = excel._decimal(cantidad, "la cantidad")
+        if not 0 <= saldo < 10**14 or saldo.as_tuple().exponent < -4:
+            raise ValueError("Ingresá una cantidad de stock válida.")
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    materiales_obra.declarar_stock(db, user, proyecto, _texto(material, "el material"), _texto(unidad, "la unidad"),
+                                  hoy_local(), saldo, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_seguimiento(proyecto)}#stock", 303)
 
 
 @router.get("")

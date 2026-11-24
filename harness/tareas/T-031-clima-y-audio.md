@@ -1,11 +1,11 @@
 ---
 id: T-031
 titulo: Clima automático y dictado por audio en el parte
-estado: en-curso
+estado: en-revision
 rama: codex/T-031-clima-y-audio
 creada: 2026-11-24
 depende: T-030
-pr:
+pr: "#44"
 ---
 
 ## Objetivo

@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from psycopg.types.json import Jsonb
 
-from app.services import almacen, auditoria, cronograma
+from app.services import almacen, auditoria, cronograma, jobs
 
 MIN_FOTOS = 3
 _LISTAS = {"personal", "avances", "equipos"}
@@ -281,4 +281,5 @@ def confirmar(db, usuario, proyecto, parte_id, *, request=None):
         (empresa, pid, empresa, pid, parte_id),
     ).fetchone()
     _auditar(db, usuario, proyecto, "parte.confirmado", parte_id, request, {"numero": nuevo["numero"]})
+    jobs.encolar(db, empresa, "parte.pdf", {"proyecto_id": pid, "parte_id": parte_id})
     return nuevo

@@ -9,7 +9,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from app.db import abrir_pool, cerrar_pool
-from app.services import almacen, embeddings, jobs, texto
+from app.services import almacen, embeddings, jobs, pdf_parte, texto
 
 log = logging.getLogger(__name__)
 
@@ -128,6 +128,7 @@ def indexar_biblioteca(db: Connection, empresa_id: int, payload: dict) -> None:
 
 
 MANEJADORES = {
+    "parte.pdf": pdf_parte.publicar,
     "archivo.analizar": analizar_archivo,
     "archivo.indexar": indexar_archivo,
     "chunks.embeber": embeber_chunks,

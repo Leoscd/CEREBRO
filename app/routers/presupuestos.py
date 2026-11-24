@@ -10,6 +10,7 @@ from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
+from app.formularios import id_opcional
 from app.permisos import es_cliente, exigir, obtener_proyecto, proyectos_visibles_sql, puede_editar_presupuesto
 from app.security import check_csrf, require_user
 from app.services import auditoria, certificados, dinero, excel, gastos, presupuestos, verificador
@@ -66,10 +67,11 @@ def _ficha(nombre: str = Form(max_length=240), fecha_precios: date = Form(),
 
 def _datos_item(rubro_id: int = Form(gt=0, le=2**63-1), descripcion: str = Form(max_length=240),
                 unidad: str = Form(max_length=40), cantidad: Decimal = Form(max_digits=14, decimal_places=4),
-                apu_id: int | None = Form(None, gt=0, le=2**63-1), precio: str = Form("", max_length=64),
+                apu_id: str = Form(""), precio: str = Form("", max_length=64),
                 origen_cantidad: Literal["manual", "revit", "autocad"] = Form("manual")):
     precio = precio.strip()
-    if (apu_id is None) == (not precio):
+    apu = id_opcional(apu_id, "el APU")
+    if (apu is None) == (not precio):
         raise HTTPException(422, "Elegí un APU o ingresá un único precio manual.")
     centavos = None
     if precio:
@@ -80,7 +82,7 @@ def _datos_item(rubro_id: int = Form(gt=0, le=2**63-1), descripcion: str = Form(
         if not 0 <= centavos <= 2**63 - 1:
             raise HTTPException(422, "El precio manual debe ser un importe válido no negativo.")
     return {"rubro_id": rubro_id, "descripcion": _texto(descripcion, "la descripción"),
-            "unidad": _texto(unidad, "la unidad"), "cantidad": cantidad, "apu_id": apu_id,
+            "unidad": _texto(unidad, "la unidad"), "cantidad": cantidad, "apu_id": apu,
             "precio_unitario_centavos": centavos, "origen_cantidad": origen_cantidad}
 
 
@@ -301,8 +303,8 @@ def listar_gastos(codigo: str, request: Request, user=Depends(require_user), db:
 
 @router.post("/proyecto/{codigo}/gastos")
 def registrar_gasto(codigo: str, request: Request, fecha: date = Form(), descripcion: str = Form(max_length=240),
-                    importe: str = Form(max_length=64), proveedor_id: int | None = Form(None, gt=0, le=2**63-1),
-                    archivo_id: int | None = Form(None, gt=0, le=2**63-1), rubro: str = Form("", max_length=120),
+                    importe: str = Form(max_length=64), proveedor_id: str = Form(""),
+                    archivo_id: str = Form(""), rubro: str = Form("", max_length=120),
                     user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
     proyecto = _proyecto(db, user, codigo)
     exigir(puede_editar_presupuesto(user, proyecto))
@@ -312,8 +314,10 @@ def registrar_gasto(codigo: str, request: Request, fecha: date = Form(), descrip
         raise HTTPException(400, str(error)) from error
     if not 0 < centavos <= 2**63 - 1:
         raise HTTPException(400, "Ingresá un importe positivo dentro del rango admitido.")
+    proveedor = id_opcional(proveedor_id, "el proveedor")
+    comprobante = id_opcional(archivo_id, "el comprobante")
     gastos.registrar(db, user, proyecto, fecha, _texto(descripcion, "la descripción"), centavos,
-                     proveedor_id=proveedor_id, archivo_id=archivo_id, rubro=rubro.replace("\x00", " ").strip(),
+                     proveedor_id=proveedor, archivo_id=comprobante, rubro=rubro.replace("\x00", " ").strip(),
                      request=request)
     db.commit()
     return RedirectResponse(f"/proyecto/{codigo}/gastos", 303)

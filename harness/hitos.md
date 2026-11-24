@@ -22,3 +22,4 @@ Lo lee la barra de avance (mod `avance-gsp`) para calcular el porcentaje del pro
   búsqueda con cita, Documentador (modelo falso) con cita `[archivo, pág. 2]`, cliente sin acceso (404 y búsqueda vacía).
   **Pendiente:** una prueba del Documentador y los embeddings con la clave real de OpenAI (falta `.env` con la clave).
 - **M1 reabierto (2026-11-24):** el plan incluye visores de DXF, IFC, 3D y ONLYOFFICE y Gotenberg, que no se hicieron; se marcó `hecho` antes de tiempo (error del auditor, H-012). Vuelve a `en-curso` hasta que se haga ese lote.
+- **M2 (2026-11-24):** código completo (L-003). No se cierra todavía: falta T-035 (formularios con opción vacía, 422) y ver la tarjeta de aprobación con la clave real de OpenAI.

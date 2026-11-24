@@ -56,6 +56,34 @@ def _archivo(db, proyecto, nombre):
     ).fetchone()["id"]
 
 
+def test_tres_certificados_cierran_al_centavo(db, mundo, como, presupuesto_muestra):
+    p = presupuesto_muestra
+    empresa, pid = p["empresa_id"], p["id"]
+    item = db.execute(
+        """UPDATE items_presupuesto SET apu_id=NULL,precio_unitario_centavos=1001,cantidad=1
+            WHERE empresa_id=%s AND presupuesto_id=%s AND descripcion='Excavación' RETURNING id""",
+        (empresa, pid),
+    ).fetchone()["id"]
+    db.commit()
+    admin = mundo["admin_a"]
+    cliente = como(admin["email"])
+    csrf = csrf_de(admin)
+    ruta = f"/presupuestos/{pid}"
+    assert cliente.post(f"{ruta}/emitir", data={"csrf": csrf}).status_code == 303
+    base = f"{ruta}/certificados"
+    for mes, avance in enumerate((3333, 6666, 10000), 2):
+        certificado = _id_respuesta(cliente.post(
+            base, data={"csrf": csrf, "periodo": f"2026-{mes:02d}", f"avance_{item}": str(avance)},
+        ))
+        assert cliente.post(f"{base}/{certificado}/emitir", data={"csrf": csrf}).status_code == 303
+    # Fórmula vieja: 333,6333 + 333,6333 + 333,7334, redondeados por separado,
+    # daban 334 + 334 + 334 = 1002. Los acumulados exactos redondean a 334, 667 y 1001.
+    # Por diferencia: 334 + (667 − 334) + (1001 − 667) = 1001.
+    montos = [c["total_centavos"] for c in certificados.listar(db, empresa, pid)]
+    assert montos == [334, 333, 334]
+    assert sum(montos) == 1001
+
+
 def test_gasto_comprobante_del_mismo_proyecto_y_aislamiento(db, mundo, como):
     p, otro, pb = mundo["p1"], mundo["p2"], mundo["pb"]
     archivo = _archivo(db, p, "Boleta A")

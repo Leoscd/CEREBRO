@@ -1,11 +1,11 @@
 ---
 id: T-027
 titulo: Certificados que cierran exacto al 100 %
-estado: lista
+estado: en-revision
 rama: codex/T-027-certificados-cierran-exacto
 creada: 2026-11-24
 depende: —
-pr:
+pr: "#40"
 ---
 
 ## Objetivo
@@ -25,14 +25,18 @@ sin desvíos de un centavo por redondear cada período por separado (H-011 en `h
   Así la suma de los períodos es siempre el acumulado redondeado una sola vez, y al 100 % es el subtotal exacto.
 
 ## Criterios de aceptación
-- [ ] CA1 Un ítem con subtotal que fuerce desvío con la fórmula vieja (p. ej. 1001 centavos certificado en 3 períodos de 33,33 %, 33,33 % y 33,34 %):
+- [x] CA1 Un ítem con subtotal que fuerce desvío con la fórmula vieja (p. ej. 1001 centavos certificado en 3 períodos de 33,33 %, 33,33 % y 33,34 %):
       la suma de los tres montos es **1001** exacto. Dejá la cuenta a mano en la prueba, mostrando que la fórmula vieja daba otro número.
-- [ ] CA2 Los casos existentes (504 y 756) siguen dando lo mismo.
-- [ ] CA3 Sensores y suite en verde.
+- [x] CA2 Los casos existentes (504 y 756) siguen dando lo mismo.
+- [x] CA3 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Retenciones, anticipos, redeterminaciones.
 
 ## Bitácora del ejecutor
+
+- El monto del período es la diferencia entre acumulados ya redondeados. En la prueba, la fórmula anterior daba 1002 y la nueva dio 334 + 333 + 334 = 1001 centavos.
+- Los certificados guardan avances, por lo que la corrección se aplica también a lo emitido. No hizo falta migración.
+- Se conservan los importes de 504 y 756 centavos del caso existente. Esta tarea parte de H-011 y no porta pruebas de obra-report-w.
 
 ## Dictamen del auditor

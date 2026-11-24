@@ -68,7 +68,7 @@ services:
     read_only: true
     tmpfs: ["/tmp"]
     volumes:
-      - ./data/archivos:/srv/app/data/archivos:ro
+      - ./data/archivos:/srv/app/data/archivos
     depends_on:
       app: { condition: service_healthy }
     mem_limit: 1g

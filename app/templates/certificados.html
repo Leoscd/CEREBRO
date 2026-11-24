@@ -19,10 +19,10 @@
 <section class="card">
   <h2>Certificado {{ certificado.numero }}</h2>
   <table>
-    <thead><tr><th>Ítem</th><th>Anterior (pb)</th><th>Acumulado (pb)</th><th>Importe del período</th></tr></thead>
+    <thead><tr><th>Ítem</th><th>Anterior</th><th>Acumulado</th><th>Importe del período</th></tr></thead>
     <tbody>
       {% for item in certificado['items'] %}
-      <tr><td>{{ item.descripcion }}</td><td>{{ item.anterior_pb }}</td><td>{{ item.avance_pb }}</td>
+      <tr><td>{{ item.descripcion }}</td><td>{{ item.anterior_pb | porcentaje }}</td><td>{{ item.avance_pb | porcentaje }}</td>
         <td>{{ item.certificado_centavos | pesos }}</td></tr>
       {% endfor %}
     </tbody>
@@ -41,11 +41,11 @@
   <h2>Nuevo certificado</h2>
   <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
   <label>Período <input type="month" name="periodo" value="{{ mes }}" required></label>
-  <p>Ingresá el avance acumulado. 100 puntos básicos equivalen al 1 %.</p>
+  <p>Ingresá el avance acumulado de cada ítem.</p>
   {% for item in base_items %}
-  <label>{{ item.descripcion }} (pb)
-    <input name="avance_{{ item.id }}" type="number" min="{{ item.anterior_pb }}" max="10000"
-           step="1" value="{{ item.anterior_pb }}" required>
+  <label>{{ item.descripcion }} (%)
+    <input name="avance_pct_{{ item.id }}" inputmode="decimal" maxlength="6"
+           value="{{ item.anterior_pb | porcentaje(false) }}" required>
   </label>
   {% endfor %}
   <button class="btn">Crear borrador</button>

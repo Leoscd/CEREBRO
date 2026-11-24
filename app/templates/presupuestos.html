@@ -20,10 +20,9 @@
   <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
   <label>Nombre <input name="nombre" required maxlength="240"></label>
   <label>Fecha de precios <input type="date" name="fecha_precios" value="{{ hoy }}" required></label>
-  <label>Gastos generales (pb) <input type="number" name="gastos_generales_pb" min="0" value="0" required></label>
-  <label>Beneficio (pb) <input type="number" name="beneficio_pb" min="0" value="0" required></label>
-  <label>Impuestos (pb) <input type="number" name="impuestos_pb" min="0" value="0" required></label>
-  <p class="muted">100 puntos básicos equivalen al 1 %.</p>
+  <label>Gastos generales (%) <input name="gastos_generales_pct" inputmode="decimal" maxlength="14" value="0" required></label>
+  <label>Beneficio (%) <input name="beneficio_pct" inputmode="decimal" maxlength="14" value="0" required></label>
+  <label>Impuestos (%) <input name="impuestos_pct" inputmode="decimal" maxlength="14" value="0" required></label>
   <button class="btn">Crear presupuesto</button>
 </form>
 {% endif %}

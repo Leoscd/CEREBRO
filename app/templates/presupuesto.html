@@ -11,7 +11,7 @@
 </select></label>
 <label>Descripción <input name="descripcion" maxlength="240" required value="{{ item.descripcion if item else '' }}"></label>
 <label>Unidad <input name="unidad" maxlength="40" required value="{{ item.unidad if item else '' }}"></label>
-<label>Cantidad <input type="number" step="0.0001" name="cantidad" required value="{{ item.cantidad if item else '' }}"></label>
+<label>Cantidad <input name="cantidad" inputmode="decimal" maxlength="64" required value="{{ item.cantidad | cantidad(false) if item else '' }}"></label>
 <label>APU <select name="apu_id"><option value="">Sin APU</option>
   {% for apu in apus if apu.activo or (item and item.apu_id == apu.id) %}
   <option value="{{ apu.id }}" {% if item and item.apu_id == apu.id %}selected{% endif %}>{{ apu.codigo }} · {{ apu.descripcion }}</option>
@@ -59,7 +59,7 @@
     <tbody>
     {% for item in rubro['items'] %}
     <tr><td>{{ item.descripcion }}{% if item.codigo_apu %} · {{ item.codigo_apu }}{% endif %}</td><td>{{ item.unidad }}</td>
-      <td>{{ item.cantidad }}</td><td>{{ item.unitario_centavos | pesos if item.unitario_centavos is not none else "Sin precio" }}
+      <td>{{ item.cantidad | cantidad }}</td><td>{{ item.unitario_centavos | pesos if item.unitario_centavos is not none else "Sin precio" }}
       {% if item.faltantes %} · Parcial{% endif %}</td>
       <td>{{ item.subtotal_centavos | pesos if item.subtotal_centavos is not none else "—" }}</td></tr>
     {% if editar and borrador %}
@@ -77,9 +77,9 @@
   <h2>Totales</h2>
   <dl class="ficha">
     <dt>Costo directo</dt><dd>{{ calculo.costo_directo_centavos | pesos }}</dd>
-    <dt>Gastos generales ({{ p.gastos_generales_pb }} pb)</dt><dd>{{ calculo.gastos_generales_centavos | pesos }}</dd>
-    <dt>Beneficio ({{ p.beneficio_pb }} pb)</dt><dd>{{ calculo.beneficio_centavos | pesos }}</dd>
-    <dt>Impuestos ({{ p.impuestos_pb }} pb)</dt><dd>{{ calculo.impuestos_centavos | pesos }}</dd>
+    <dt>Gastos generales ({{ p.gastos_generales_pb | porcentaje }})</dt><dd>{{ calculo.gastos_generales_centavos | pesos }}</dd>
+    <dt>Beneficio ({{ p.beneficio_pb | porcentaje }})</dt><dd>{{ calculo.beneficio_centavos | pesos }}</dd>
+    <dt>Impuestos ({{ p.impuestos_pb | porcentaje }})</dt><dd>{{ calculo.impuestos_centavos | pesos }}</dd>
     <dt><strong>Total</strong></dt><dd><strong>{{ calculo.total_centavos | pesos }}</strong></dd>
   </dl>
 </section>
@@ -89,9 +89,9 @@
     <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
     <label>Nombre <input name="nombre" value="{{ p.nombre }}" required maxlength="240"></label>
     <label>Fecha de precios <input type="date" name="fecha_precios" value="{{ p.fecha_precios }}" required></label>
-    <label>Gastos generales (pb) <input type="number" name="gastos_generales_pb" min="0" value="{{ p.gastos_generales_pb }}" required></label>
-    <label>Beneficio (pb) <input type="number" name="beneficio_pb" min="0" value="{{ p.beneficio_pb }}" required></label>
-    <label>Impuestos (pb) <input type="number" name="impuestos_pb" min="0" value="{{ p.impuestos_pb }}" required></label>
+    <label>Gastos generales (%) <input name="gastos_generales_pct" inputmode="decimal" maxlength="14" value="{{ p.gastos_generales_pb | porcentaje(false) }}" required></label>
+    <label>Beneficio (%) <input name="beneficio_pct" inputmode="decimal" maxlength="14" value="{{ p.beneficio_pb | porcentaje(false) }}" required></label>
+    <label>Impuestos (%) <input name="impuestos_pct" inputmode="decimal" maxlength="14" value="{{ p.impuestos_pb | porcentaje(false) }}" required></label>
     <button class="btn">Guardar datos</button>
   </form>
 </details>

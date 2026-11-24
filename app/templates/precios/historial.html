@@ -7,11 +7,11 @@
 <div class="card">
   <h2>Historial de precios</h2>
   <table>
-    <thead><tr><th>Vigente desde</th><th>Precio</th><th>Variación (pb)</th><th>Proveedor</th><th>Fuente</th></tr></thead>
+    <thead><tr><th>Vigente desde</th><th>Precio</th><th>Variación</th><th>Proveedor</th><th>Fuente</th></tr></thead>
     <tbody>
       {% for fila in filas %}
       <tr><td>{{ fila.vigente_desde | solo_fecha }}</td><td>{{ fila.actual_centavos | pesos }}</td>
-        <td>{{ fila.variacion_pb if fila.variacion_pb is not none else "—" }}</td>
+        <td>{{ fila.variacion_pb | porcentaje if fila.variacion_pb is not none else "—" }}</td>
         <td>{{ fila.proveedor or "—" }}</td><td>{{ fila.fuente }}</td></tr>
       {% else %}
       <tr><td colspan="5">Todavía no hay precios.</td></tr>

@@ -1,11 +1,11 @@
 ---
 id: T-023
 titulo: Agente Presupuestos
-estado: lista
+estado: en-revision
 rama: codex/T-023-agente-presupuestos
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#33"
 ---
 
 ## Objetivo
@@ -33,14 +33,19 @@ todo lo que escribe pasa por aprobación (T-022).
 - Límites: rondas por run y consultas por hora configurables en `.env`.
 
 ## Criterios de aceptación
-- [ ] CA1 Guion con modelo falso: buscar material → proponer `agregar_items` → queda pendiente; aprobar → los ítems existen y el total recalculado coincide al centavo.
-- [ ] CA2 `calc` rechaza `__import__`, atributos y llamadas no permitidas (pruebas portadas de excel-wrapper).
-- [ ] CA3 Aislamiento: herramientas con ids de otra empresa o de un proyecto sin acceso → "no encontrado"; nada ajeno en respuestas ni en `tool_calls`.
-- [ ] CA4 Sin `MODELO_PRESUPUESTOS` con proveedor `openai` → 503 claro. Sensores y suite en verde (sin red).
+- [x] CA1 Guion con modelo falso: buscar material → proponer `agregar_items` → queda pendiente; aprobar → los ítems existen y el total recalculado coincide al centavo.
+- [x] CA2 `calc` rechaza `__import__`, atributos y llamadas no permitidas (pruebas portadas de excel-wrapper).
+- [x] CA3 Aislamiento: herramientas con ids de otra empresa o de un proyecto sin acceso → "no encontrado"; nada ajeno en respuestas ni en `tool_calls`.
+- [x] CA4 Sin `MODELO_PRESUPUESTOS` con proveedor `openai` → 503 claro. Sensores y suite en verde (sin red).
 
 ## Fuera de alcance
 - Cómputos desde Revit/AutoCAD (M4). Leer planillas de formato libre con IA.
 
 ## Bitácora del ejecutor
+
+- El panel conserva una conversación por persona y proyecto. Cada turno parte del presupuesto abierto y las consultas se limitan por persona en toda la empresa.
+- Las escrituras pasan por T-022. Se validan permisos e IDs antes de guardar la aprobación y de nuevo antes de aplicar el efecto. Los ajustes por índice comparan la cotización aprobada con la que devuelve el cálculo exacto.
+- La calculadora usa AST y Decimal con límites de tamaño, magnitud y exponentes. La búsqueda de criterios usa el filtro de visibilidad de M1 sobre la biblioteca aprobada.
+- Pasaron 15 pruebas enfocadas, incluida la cuenta de 11696 centavos tras aprobar el ítem, el cálculo por índice, el 404 sin solicitud ajena y ambos límites. Pasaron los sensores y la suite completa. El guion de IA se verificó con proveedor falso.
 
 ## Dictamen del auditor

@@ -8,11 +8,12 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from app import security
-from app.agentes import aprobaciones, documentador
+from app import config, security
+from app.agentes import aprobaciones, documentador, presupuestos
 from app.agentes.herramientas import ContextoDocumentador, ids_visibles
 from app.db import db_dependency, pool
 from app.permisos import obtener_proyecto
+from app.routers.presupuestos import _obtener as obtener_presupuesto
 from app.security import require_user
 from app.services import auditoria
 
@@ -27,8 +28,8 @@ class Pregunta(BaseModel):
     conversacion_id: int | None = Field(default=None, ge=1, le=2**63 - 1)
 
 
-def _alcance(usuario: dict, proyecto: dict) -> tuple:
-    return usuario["empresa_id"], proyecto["id"], usuario["id"], _AGENTE
+def _alcance(usuario: dict, proyecto: dict, agente: str = _AGENTE) -> tuple:
+    return usuario["empresa_id"], proyecto["id"], usuario["id"], agente
 
 
 def _mensajes(db: Connection, usuario: dict, proyecto: dict, conversacion_id: int) -> list[dict]:
@@ -57,8 +58,9 @@ def historial_documentador(codigo: str, user=Depends(require_user), db: Connecti
                         headers=_PRIVADO)
 
 
-def _abrir_conversacion(db: Connection, usuario: dict, proyecto: dict, conversacion_id: int | None) -> int:
-    params = _alcance(usuario, proyecto)
+def _abrir_conversacion(db: Connection, usuario: dict, proyecto: dict, conversacion_id: int | None,
+                       *, agente: str = _AGENTE) -> int:
+    params = _alcance(usuario, proyecto, agente)
     if conversacion_id is None:
         fila = db.execute(
             """INSERT INTO conversaciones (empresa_id, proyecto_id, usuario_id, agente)
@@ -157,6 +159,81 @@ def preguntar_documentador(codigo: str, pregunta: Pregunta, request: Request, us
         _marcar_fallido(empresa_id, conversacion, run)
         raise
     return JSONResponse({"conversacion_id": conversacion, "respuesta": respuesta, "citas": citas}, headers=_PRIVADO)
+
+
+def _mensajes_presupuestos(db, empresa, conversacion):
+    filas = db.execute(
+        """SELECT rol,contenido,citas FROM mensajes WHERE empresa_id=%s AND conversacion_id=%s
+            ORDER BY id DESC LIMIT 12""", (empresa, conversacion),
+    ).fetchall()
+    return list(reversed(filas))
+
+
+@router.get("/presupuestos/{presupuesto_id:int}/agente")
+def historial_presupuestos(presupuesto_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    _, proyecto = obtener_presupuesto(db, user, presupuesto_id)
+    empresa = user["empresa_id"]
+    fila = db.execute(
+        """SELECT id FROM conversaciones WHERE empresa_id=%s AND proyecto_id=%s AND usuario_id=%s AND agente=%s""",
+        _alcance(user, proyecto, presupuestos.SLUG),
+    ).fetchone()
+    if not fila:
+        return JSONResponse({"conversacion_id": None, "mensajes": []}, headers=_PRIVADO)
+    conv = fila["id"]
+    mensajes = _mensajes_presupuestos(db, empresa, conv)
+    pendiente = db.execute(
+        """SELECT id,estado_sdk FROM agent_runs WHERE empresa_id=%s AND conversacion_id=%s
+            AND estado='esperando_aprobacion' ORDER BY id DESC LIMIT 1""", (empresa, conv),
+    ).fetchone()
+    datos = {"conversacion_id": conv, "mensajes": mensajes}
+    if pendiente:
+        mensajes.append({"rol": "user", "contenido": pendiente["estado_sdk"]["mensaje"], "citas": []})
+        contexto = aprobaciones.Contexto(user, proyecto, pendiente["id"], conv)
+        datos.update(aprobaciones._solicitudes(db, presupuestos.REGISTRO, contexto))
+    return JSONResponse(datos, headers=_PRIVADO)
+
+
+@router.post("/presupuestos/{presupuesto_id:int}/agente")
+def preguntar_presupuestos(presupuesto_id: int, pregunta: Pregunta, user=Depends(check_csrf)):
+    mensaje = pregunta.mensaje.replace("\x00", " ").strip()
+    if not mensaje:
+        raise HTTPException(400, "Escribí una consulta.")
+    empresa = user["empresa_id"]
+    with pool().connection() as db:
+        _, proyecto = obtener_presupuesto(db, user, presupuesto_id)
+        try:
+            modelo = presupuestos.modelo_configurado()
+        except presupuestos.ConfiguracionPresupuestos as error:
+            raise HTTPException(503, str(error)) from error
+        db.execute("SELECT id FROM usuarios WHERE empresa_id=%s AND id=%s FOR UPDATE", (empresa, user["id"]))
+        recientes = db.execute(
+            """SELECT count(*) AS cantidad FROM agent_runs r JOIN conversaciones c
+                ON c.empresa_id=r.empresa_id AND c.id=r.conversacion_id
+                WHERE r.empresa_id=%s AND c.usuario_id=%s AND c.agente=%s
+                  AND r.creado_en>=now()-interval '1 hour'""", (empresa, user["id"], presupuestos.SLUG),
+        ).fetchone()["cantidad"]
+        if recientes >= max(1, config.PRESUPUESTOS_CONSULTAS_POR_HORA):
+            raise HTTPException(429, "Alcanzaste el límite de consultas por hora del agente Presupuestos.")
+        conv = _abrir_conversacion(db, user, proyecto, pregunta.conversacion_id, agente=presupuestos.SLUG)
+        if db.execute(
+            """SELECT 1 FROM agent_runs WHERE empresa_id=%s AND conversacion_id=%s
+                AND estado IN ('en_curso','esperando_aprobacion') LIMIT 1""", (empresa, conv),
+        ).fetchone():
+            raise HTTPException(409, "Resolvé la consulta pendiente antes de iniciar otra.")
+        entrada = [{"role": "developer", "content": f"La ficha abierta corresponde al presupuesto ID {presupuesto_id}."}]
+        entrada.extend({"role": fila["rol"], "content": fila["contenido"]}
+                       for fila in _mensajes_presupuestos(db, empresa, conv))
+        entrada.append({"role": "user", "content": mensaje})
+        run = db.execute(
+            """INSERT INTO agent_runs(empresa_id,conversacion_id,modelo,estado)
+               VALUES (%s,%s,%s,'en_curso') RETURNING id""", (empresa, conv, modelo),
+        ).fetchone()["id"]
+    contexto = aprobaciones.Contexto(user, proyecto, run, conv)
+    try:
+        datos = asyncio.run(aprobaciones.iniciar(presupuestos.SLUG, modelo, contexto, entrada))
+    except aprobaciones.FalloModelo as error:
+        raise HTTPException(503, str(error)) from error
+    return JSONResponse(datos, headers=_PRIVADO)
 
 
 def _decidir(run_id, llamada_id, aprobar, request, user):

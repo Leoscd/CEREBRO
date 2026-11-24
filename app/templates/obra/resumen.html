@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% macro pct(pb) %}{{ "%.2f" | format(pb / 100) | replace(".", ",") }} %{% endmacro %}
+{% block title %}Resumen de obra · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="{{ ruta }}">Obra · {{ proyecto.nombre }}</a></p>
+<h1>Resumen de obra</h1>
+<p>{{ resumen.fecha | solo_fecha }}</p>
+<div class="kpis">
+  <div class="card"><strong>{{ pct(resumen.real_pb) }}</strong> avance físico · {{ pct(resumen.previsto_pb) }} previsto</div>
+  <div class="card"><strong>{{ resumen.economico_centavos | pesos }}</strong> avance económico · {{ pct(resumen.economico_pb) }} de los ítems vinculados</div>
+</div>
+<section class="card">
+  <h2>Tareas atrasadas</h2>
+  <ul>{% for tarea in resumen.tareas_atrasadas %}
+    <li><a href="{{ ruta }}#tarea-{{ tarea.id }}">{{ tarea.nombre }}</a>
+      {% if tarea.critica %}· <strong>Crítica</strong>{% endif %}
+      · {{ pct(tarea.real_pb) }} real · {{ pct(tarea.previsto_pb) }} previsto</li>
+  {% else %}<li>Sin tareas atrasadas.</li>{% endfor %}</ul>
+</section>
+<section class="card">
+  <h2><a href="{{ ruta }}/seguimiento#alertas">Alertas de materiales</a></h2>
+  <ul>{% for alerta in resumen.alertas_materiales %}
+    <li><strong>{{ "Crítico" if alerta.nivel == "critico" else alerta.nivel | capitalize }}</strong>
+      · {{ alerta.material }} para {{ alerta.tarea }} · pedir antes del {{ alerta.fecha_limite | solo_fecha }}</li>
+  {% else %}<li>Sin alertas.</li>{% endfor %}</ul>
+</section>
+<section class="card">
+  <h2><a href="{{ ruta }}/seguimiento#notas">Notas abiertas</a></h2>
+  <ul>{% for nota in resumen.notas_abiertas %}
+    <li><a href="{{ ruta }}/seguimiento#nota-{{ nota.id }}">{{ nota.asunto }}</a>
+      {% if nota.vencida %}· <strong>Vencida</strong>{% endif %}
+      {% if nota.plazo %}· Plazo {{ nota.plazo | solo_fecha }}{% endif %}</li>
+  {% else %}<li>Sin notas abiertas.</li>{% endfor %}</ul>
+</section>
+<section class="card">
+  <h2>Último parte</h2>
+  {% set parte = resumen.ultimo_parte %}
+  {% if parte %}
+  <p><a href="{{ ruta }}/partes/{{ parte.id }}">Parte N.º {{ parte.numero }} · {{ parte.fecha | solo_fecha }}</a> · {{ parte.dt_nombre }}</p>
+  {% if parte.datos.resumen %}<p>{{ parte.datos.resumen }}</p>{% endif %}
+  {% else %}<p>Todavía no hay partes confirmados.</p>{% endif %}
+</section>
+{% endblock %}

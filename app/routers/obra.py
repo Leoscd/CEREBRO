@@ -12,7 +12,9 @@ from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, puede_registrar_obra
 from app.routers.presupuestos import _texto
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, cronograma, excel, jobs, materiales_obra, notas_obra, partes, transcripcion
+from app.services import (
+    almacen, auditoria, bitacora, cronograma, excel, jobs, materiales_obra, notas_obra, partes, resumen_obra, transcripcion,
+)
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -246,6 +248,32 @@ def registrar_stock(codigo: str, request: Request, material: str = Form(max_leng
                                   hoy_local(), saldo, request=request)
     db.commit()
     return RedirectResponse(f"{_ruta_seguimiento(proyecto)}#stock", 303)
+
+
+@router.get("/bitacora")
+def ver_bitacora(codigo: str, request: Request, desde: str = "", hasta: str = "", q: str = "",
+                 user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    comienzo, fin = _fecha_opcional(desde), _fecha_opcional(hasta)
+    tipos = request.query_params.getlist("tipo")
+    if len(q) > 200:
+        raise HTTPException(400, "La búsqueda admite hasta 200 caracteres.")
+    texto = q.strip()
+    return templates.TemplateResponse(request, "obra/bitacora.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "tipos": bitacora.TIPOS, "seleccion": tipos,
+        "desde": comienzo, "hasta": fin, "q": texto,
+        "eventos": bitacora.bitacora(db, user, proyecto, comienzo, fin, tipos),
+        "hallazgos": bitacora.buscar_en_partes(db, user, proyecto, texto) if texto else [],
+    })
+
+
+@router.get("/resumen")
+def ver_resumen(codigo: str, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    return templates.TemplateResponse(request, "obra/resumen.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto),
+        "resumen": resumen_obra.resumen_obra(db, user, proyecto, hoy_local()),
+    })
 
 
 @router.get("")

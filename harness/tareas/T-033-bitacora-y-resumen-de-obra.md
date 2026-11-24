@@ -1,7 +1,7 @@
 ---
 id: T-033
 titulo: Bitácora del proyecto y resumen de obra
-estado: lista
+estado: en-curso
 rama: codex/T-033-bitacora-y-resumen-de-obra
 creada: 2026-11-24
 depende: T-032
@@ -28,13 +28,17 @@ con lo importante: avance físico y económico, atrasos, alertas y notas abierta
 - Estos servicios son los que va a usar el agente Obra (T-034): devuelven datos, no HTML.
 
 ## Criterios de aceptación
-- [ ] CA1 Pruebas portadas del resumen y de la búsqueda (listalas con su origen).
-- [ ] CA2 La bitácora de un proyecto nunca trae eventos de otro proyecto o empresa (prueba con datos en ambos).
-- [ ] CA3 Sensores y suite en verde.
+- [x] CA1 Pruebas portadas del resumen y de la búsqueda (listalas con su origen).
+- [x] CA2 La bitácora de un proyecto nunca trae eventos de otro proyecto o empresa (prueba con datos en ambos).
+- [x] CA3 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Informe semanal automático (Documentador, más adelante).
 
 ## Bitácora del ejecutor
+
+- Porté de `obra-report-w/tests/test_consultas.py` los casos `test_resumen_obra_marca_atraso_critico_y_notas`, `test_ultimos_reportes_del_mas_nuevo_al_mas_viejo` y `test_buscar_en_reportes_ignora_acentos` a `tests/test_bitacora.py`. La última pareja comparte un caso de prueba.
+- La bitácora reúne partes confirmados, notas, hitos, avances y pedidos mediante una consulta con ámbito de empresa y proyecto. Los servicios comprueban visibilidad incluso cuando se llaman fuera de la ruta.
+- La búsqueda conserva la puntuación por palabras de `obra_bot/herramientas.py` y ordena por fecha. No hizo falta una migración.
 
 ## Dictamen del auditor

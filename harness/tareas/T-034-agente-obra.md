@@ -1,7 +1,7 @@
 ---
 id: T-034
 titulo: Agente Obra
-estado: lista
+estado: en-curso
 rama: codex/T-034-agente-obra
 creada: 2026-11-24
 depende: —
@@ -38,5 +38,10 @@ parte del día: lo que escribe en el borrador pasa por aprobación, y cerrar el 
 - Canales de WhatsApp/Telegram (después del plan). Fotos por el agente.
 
 ## Bitácora del ejecutor
+
+- El panel del cronograma comparte el historial y las tarjetas de aprobación con Presupuestos. Cada agente conserva su conversación por usuario y proyecto.
+- Las cinco escrituras comprueban permiso, fecha local y estado del parte al proponer y al ejecutar. El primer cambio aprobado abre el borrador del usuario. Cerrar usa la confirmación existente con sus requisitos, numeración y trabajo de PDF.
+- La nota se agrega al texto de observaciones y el material a pedir a los faltantes. Ambos quedan visibles en el parte y su PDF. La tarjeta muestra la fecha para que una aprobación pendiente no se aplique al día siguiente.
+- Prueba portada de `obra-report-w/tests/test_consultas.py::test_reporte_confirmado_solo_permite_consultas` a `tests/test_agente_obra.py`. Cubre las cinco escrituras y la consulta de resumen después del cierre. Pruebas propias para el circuito con modelo falso, rechazo, cambio de día, permisos, aislamiento y configuración.
 
 ## Dictamen del auditor

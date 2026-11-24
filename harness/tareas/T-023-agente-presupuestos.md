@@ -1,7 +1,7 @@
 ---
 id: T-023
 titulo: Agente Presupuestos
-estado: en-revision
+estado: hecha
 rama: codex/T-023-agente-presupuestos
 creada: 2026-11-23
 depende: —
@@ -49,3 +49,4 @@ todo lo que escribe pasa por aprobación (T-022).
 - Pasaron 15 pruebas enfocadas, incluida la cuenta de 11696 centavos tras aprobar el ítem, el cálculo por índice, el 404 sin solicitud ajena y ambos límites. Pasaron los sensores y la suite completa. El guion de IA se verificó con proveedor falso.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Calculadora acotada sin ejecución de código; herramientas revalidan sesión y filtran por empresa/proyecto; escrituras validadas antes de pausar y al ejecutar; cuentas verificadas (11696, 1012). Merge: #33.

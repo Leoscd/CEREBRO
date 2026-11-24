@@ -2,7 +2,7 @@
 id: L-003
 titulo: M2 — presupuestos y precios
 hito: M2
-estado: abierto
+estado: cerrado        # 11/11 mergeadas el 2026-11-24 (PRs #25-#31, #33-#36)
 etapa_activa: 2        # etapa 1 aprobada y mergeada el 2026-11-23 (PRs #25-#31)
 ---
 

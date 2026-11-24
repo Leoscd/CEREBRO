@@ -1,7 +1,7 @@
 ---
 id: T-025
 titulo: Esqueleto de gastos y certificados
-estado: en-revision
+estado: hecha
 rama: codex/T-025-gastos-y-certificados
 creada: 2026-11-23
 depende: T-024
@@ -48,3 +48,4 @@ para que M3 (obra) y Gerencia tengan de dónde leer "presupuestado vs. gastado".
 - Los sensores y la suite completa pasaron. El alcance es el registro mínimo, sin PDF ni integración contable.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Cuentas verificadas (504, 756); certificados emitidos inmutables. Error de diseño de la tarea (no del ejecutor): redondeo por período puede desviar 1 centavo al sumar → T-027. Merge: #35.

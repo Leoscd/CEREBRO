@@ -1,11 +1,11 @@
 ---
 id: T-035
 titulo: Formularios con opción vacía responden 422
-estado: en-curso
+estado: en-revision
 rama: codex/T-035-formularios-con-opcion-vacia
 creada: 2026-11-24
 depende: —
-pr:
+pr: "#47"
 ---
 
 ## Objetivo

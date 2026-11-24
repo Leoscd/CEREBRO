@@ -37,7 +37,10 @@ def _con_montos(filas):
         if fila["avance_pb"] is None:
             fila["avance_pb"] = fila["anterior_pb"]
         subtotal = dinero.multiplicar(precio, fila["cantidad"])
-        fila["certificado_centavos"] = dinero.aplicar_coeficiente(subtotal, fila["avance_pb"] - fila["anterior_pb"])
+        # Por diferencia de acumulados, todos los períodos cierran al centavo.
+        acumulado = dinero.aplicar_coeficiente(subtotal, fila["avance_pb"])
+        anterior = dinero.aplicar_coeficiente(subtotal, fila["anterior_pb"])
+        fila["certificado_centavos"] = acumulado - anterior
     return dinero.sumar(fila["certificado_centavos"] for fila in filas)
 
 

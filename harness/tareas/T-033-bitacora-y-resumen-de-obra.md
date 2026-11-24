@@ -1,11 +1,11 @@
 ---
 id: T-033
 titulo: Bitácora del proyecto y resumen de obra
-estado: en-curso
+estado: en-revision
 rama: codex/T-033-bitacora-y-resumen-de-obra
 creada: 2026-11-24
 depende: T-032
-pr:
+pr: "#46"
 ---
 
 ## Objetivo

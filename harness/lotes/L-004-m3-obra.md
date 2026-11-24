@@ -25,8 +25,12 @@ Codex: ejecutá las tareas de la etapa activa con la skill `.agents/skills/ejecu
 | 5 | `harness/tareas/T-031-clima-y-audio.md` | T-030 |
 | 6 | `harness/tareas/T-032-notas-pedidos-y-alertas.md` | T-031 |
 | 7 | `harness/tareas/T-033-bitacora-y-resumen-de-obra.md` | T-032 |
+| 8 | `harness/tareas/T-035-formularios-con-opcion-vacia.md` | — (sale de `main`, PR contra `main`) |
+| 9 | `harness/tareas/T-036-numeros-en-formato-argentino.md` | T-035 |
 
-**PARADA 1:** cuando T-027 y T-033 (y las del medio) tengan su PR abierto con CI en verde, pará y reportá la lista de PRs.
+T-035 y T-036 salieron del recorrido de M2 en el navegador (agregadas el 2026-11-24). Si ya estás en la cadena de M3, terminala y después hacé estas dos.
+
+**PARADA 1:** cuando T-027, T-028 a T-033, T-035 y T-036 tengan su PR abierto con CI en verde, pará y reportá la lista de PRs.
 
 ## Etapa 2 — agente (solo si `etapa_activa: 2`)
 | Orden | Tarea | Depende de |

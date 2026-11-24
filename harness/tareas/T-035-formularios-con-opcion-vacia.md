@@ -1,7 +1,7 @@
 ---
 id: T-035
 titulo: Formularios con opción vacía responden 422
-estado: en-revision
+estado: hecha
 rama: codex/T-035-formularios-con-opcion-vacia
 creada: 2026-11-24
 depende: —
@@ -42,3 +42,4 @@ Hoy es imposible, desde la pantalla: cargar un precio sin proveedor, agregar un 
 - La prueba sigue el patrón de T-001: extrae los campos del formulario renderizado, incluidos los valores iniciales de cada select, y los reenvía con los datos ingresados. Los identificadores inválidos producen 400 y el aislamiento existente devuelve 404.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). id_opcional + pruebas que arman el POST desde el HTML renderizado (helper formulario()). Sensor form-opcional agregado por el auditor. Merge: #47.

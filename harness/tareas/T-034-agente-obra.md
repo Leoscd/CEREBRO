@@ -4,7 +4,7 @@ titulo: Agente Obra
 estado: lista
 rama: codex/T-034-agente-obra
 creada: 2026-11-24
-depende: T-033
+depende: —
 pr:
 ---
 

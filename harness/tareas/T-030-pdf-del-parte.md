@@ -1,7 +1,7 @@
 ---
 id: T-030
 titulo: PDF numerado del parte diario
-estado: en-revision
+estado: hecha
 rama: codex/T-030-pdf-del-parte
 creada: 2026-11-24
 depende: T-029
@@ -46,3 +46,4 @@ Al confirmar un parte se genera su PDF numerado (con fotos) y queda guardado com
 - Habilité la escritura del worker en el bind mount compartido `data/archivos` para publicar ahí con el almacén existente. El resto del sistema de archivos del contenedor conserva su restricción. El bloqueo por obra y la auditoría transaccional identifican un trabajo repetido.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). PDF idempotente con tildes; el worker pasó a escribir en el almacén (sin :ro), justificado — riesgo anotado en H-014. Merge: #43.

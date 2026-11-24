@@ -1,7 +1,7 @@
 ---
 id: T-031
 titulo: Clima automático y dictado por audio en el parte
-estado: en-revision
+estado: hecha
 rama: codex/T-031-clima-y-audio
 creada: 2026-11-24
 depende: T-030
@@ -45,3 +45,4 @@ Que el parte traiga solo el clima del día en la obra y que el DT pueda dictar p
 - Reutilicé lat/lon de 0001_base.sql, que ya existían como double precision. Validé pares y rangos en la ficha y en la consulta de clima. La migración 0015 agrega las propuestas de dictado.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Sin red en pruebas; clima no bloquea (timeout 4 s); audio con firma real y aceptación del DT; solo OpenAI. Merge: #44.

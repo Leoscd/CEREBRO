@@ -1,7 +1,7 @@
 ---
 id: T-027
 titulo: Certificados que cierran exacto al 100 %
-estado: en-revision
+estado: hecha
 rama: codex/T-027-certificados-cierran-exacto
 creada: 2026-11-24
 depende: —
@@ -40,3 +40,4 @@ sin desvíos de un centavo por redondear cada período por separado (H-011 en `h
 - Se conservan los importes de 504 y 756 centavos del caso existente. Esta tarea parte de H-011 y no porta pruebas de obra-report-w.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Período = acumulado redondeado − anterior; prueba muestra 1002 con la fórmula vieja y 1001 con la nueva. Merge: #40.

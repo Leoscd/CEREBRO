@@ -79,6 +79,19 @@ def test_csrf_no_se_engana_con_el_nombre(tmp_path, monkeypatch):
     assert [f.donde.split()[-1] for f in fast.sensor_rutas()] == ["falsa"]
 
 
+def test_form_opcional_tipado(tmp_path, monkeypatch):
+    # H-013: un <select> con opción vacía manda "" y `int | None = Form(None)` responde 422.
+    (tmp_path / "app" / "routers").mkdir(parents=True)
+    (tmp_path / "app" / "routers" / "z.py").write_text(
+        "from app.security import check_csrf\n\n"
+        "@router.post('/a')\ndef a(x: int | None = Form(None), y: Optional[date] = Form(None),\n"
+        "      z: str | None = Form(None), w: str = Form(''), user=Depends(check_csrf)):\n    pass\n",
+        encoding="utf-8")
+    monkeypatch.setattr(fast, "RAIZ", tmp_path)
+    monkeypatch.setattr(fast, "POST_SIN_CSRF", tmp_path / "no-existe.txt")
+    assert sorted(f.donde.split("(")[-1].rstrip(")") for f in fast.sensor_rutas()) == ["x", "y"]
+
+
 def test_protegidos():
     assert protegidos.violaciones(["app/main.py", "harness/tareas/T-001.md", "harness/candidatos/C-001.md"]) == []
     assert protegidos.violaciones(["AGENTS.md", "scripts/checks/fast.py", ".agents/skills/x/SKILL.md", "harness/lotes/L-001.md"]) == [

@@ -193,6 +193,31 @@ def _excepciones_csrf() -> set[str]:
             if ln.split("#", 1)[0].strip()}
 
 
+def _form_opcionales(fn: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
+    """Parámetros `X | None = Form(...)` u `Optional[X] = Form(...)` con X distinto de str (H-013)."""
+    nombres = []
+    argumentos = [*fn.args.args, *fn.args.kwonlyargs]
+    defaults = [None] * (len(fn.args.args) - len(fn.args.defaults)) + [*fn.args.defaults, *fn.args.kw_defaults]
+    def tipos(nodo) -> list[ast.AST]:
+        if isinstance(nodo, ast.BinOp) and isinstance(nodo.op, ast.BitOr):
+            return tipos(nodo.left) + tipos(nodo.right)
+        if isinstance(nodo, ast.Subscript) and getattr(nodo.value, "id", None) == "Optional":
+            return [nodo.slice, ast.Constant(None)]
+        return [nodo]
+
+    def es_none(nodo) -> bool:
+        return isinstance(nodo, ast.Constant) and nodo.value is None or getattr(nodo, "id", None) == "None"
+
+    for arg, default in zip(argumentos, defaults, strict=False):
+        es_form = isinstance(default, ast.Call) and getattr(default.func, "id", None) == "Form"
+        if not es_form or arg.annotation is None:
+            continue
+        partes = tipos(arg.annotation)
+        if any(es_none(p) for p in partes) and any(not es_none(p) and getattr(p, "id", None) != "str" for p in partes):
+            nombres.append(arg.arg)
+    return nombres
+
+
 def _llama_csrf(fn: ast.FunctionDef | ast.AsyncFunctionDef, nombres: set[str]) -> bool:
     for n in ast.walk(fn):
         if isinstance(n, ast.Call):
@@ -242,6 +267,12 @@ def sensor_rutas() -> list[Falla]:
                     fallas.append(Falla("aislamiento", donde, "La ruta recibe `empresa_id` del pedido.",
                                         "Tomá la empresa de la sesión (`user['empresa_id']`) y validá el proyecto "
                                         "con app/permisos.py (obtener_proyecto)."))
+                for nombre in _form_opcionales(fn):
+                    fallas.append(Falla("form-opcional", f"{donde} ({nombre})",
+                                        "Campo de formulario opcional tipado (`X | None = Form(...)`): un <select> con "
+                                        "opción vacía manda \"\" y FastAPI responde 422 crudo (H-013).",
+                                        "Recibilo como `str = Form(\"\")` y convertilo con app/formularios.py "
+                                        "(`id_opcional`, `porcentaje_a_pb`)."))
             if _es_ruta_escritura(fn) and not (_depends(fn) & con_csrf) and f"{f.name}:{fn.name}" not in excepciones:
                 fallas.append(Falla("csrf", donde, "Ruta de escritura sin CSRF.",
                                     "Agregá `user=Depends(check_csrf)` (o `_admin_csrf`). Si es una ruta pública "

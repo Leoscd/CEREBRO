@@ -1,7 +1,7 @@
 ---
 id: T-029
 titulo: Parte diario de obra (borrador, confirmación inmutable y numeración)
-estado: en-revision
+estado: hecha
 rama: codex/T-029-parte-diario
 creada: 2026-11-24
 depende: T-028
@@ -51,3 +51,4 @@ fotos y observaciones) y lo confirme; al confirmarlo recibe un **número correla
 - La cámara usa el control nativo del navegador y no requiere JavaScript. Jornada no laborable conserva la revisión de condiciones y EPP, sin exigir personal, avance o fotos.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Numeración con bloqueo de obra (1 y 2 concurrentes); parte y fotos confirmados inmutables; fotos referenciadas por versión exacta. Merge: #42.

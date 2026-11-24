@@ -1,7 +1,7 @@
 ---
 id: T-032
 titulo: Notas de obra, pedidos, stock y alertas de materiales
-estado: en-revision
+estado: hecha
 rama: codex/T-032-notas-pedidos-y-alertas
 creada: 2026-11-24
 depende: T-031
@@ -43,3 +43,4 @@ y avisar con anticipación qué hay que pedir para no frenar una tarea.
 - El saldo vigente se reconstruye con el último conteo declarado y los ingresos posteriores. Probé un parte de fecha anterior confirmado tarde para verificar que su ingreso quede contado. El margen predeterminado es de dos días hábiles desde MARGEN_PEDIDO_DIAS.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Alertas en días hábiles verificadas a mano con feriado; prueba portada de obra-report-w. Merge: #45.

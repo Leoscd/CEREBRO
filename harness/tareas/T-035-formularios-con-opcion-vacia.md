@@ -1,7 +1,7 @@
 ---
 id: T-035
 titulo: Formularios con opción vacía responden 422
-estado: lista
+estado: en-curso
 rama: codex/T-035-formularios-con-opcion-vacia
 creada: 2026-11-24
 depende: —
@@ -28,14 +28,17 @@ Hoy es imposible, desde la pantalla: cargar un precio sin proveedor, agregar un 
   (leé el HTML de la pantalla y armá el POST con todos sus `name`, como en la prueba de "Salir" de T-001).
 
 ## Criterios de aceptación
-- [ ] CA1 Desde los formularios renderizados: precio sin proveedor, ítem manual sin APU y gasto sin proveedor ni comprobante → 303 y se guardan.
-- [ ] CA2 Un id inválido (`"abc"`) → 400 con mensaje claro; un id de otra empresa → 404.
-- [ ] CA3 Sensores y suite en verde.
+- [x] CA1 Desde los formularios renderizados: precio sin proveedor, ítem manual sin APU y gasto sin proveedor ni comprobante → 303 y se guardan.
+- [x] CA2 Un id inválido (`"abc"`) → 400 con mensaje claro; un id de otra empresa → 404.
+- [x] CA3 Sensores y suite en verde.
 - Nota: después del merge, el auditor agrega un sensor que impide volver a usar `int | None = Form(...)` en rutas.
 
 ## Fuera de alcance
 - Rediseño de formularios.
 
 ## Bitácora del ejecutor
+
+- Relevé todos los `int | None` recibidos por `Form`: `proveedor_id` de precios, `apu_id` del alta/edición de ítems, y `proveedor_id` y `archivo_id` de gastos. No encontré otros casos.
+- La prueba sigue el patrón de T-001: extrae los campos del formulario renderizado, incluidos los valores iniciales de cada select, y los reenvía con los datos ingresados. Los identificadores inválidos producen 400 y el aislamiento existente devuelve 404.
 
 ## Dictamen del auditor

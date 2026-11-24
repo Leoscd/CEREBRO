@@ -10,6 +10,7 @@ from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
+from app.formularios import id_opcional
 from app.permisos import es_cliente, exigir, puede_gestionar_precios
 from app.security import check_csrf, require_user
 from app.services import apus, auditoria, dinero, excel, precios
@@ -96,7 +97,7 @@ def historial(request: Request, material_id: int, user=Depends(_personal), db: C
 
 @router.post("/materiales/{material_id}/precios")
 def cargar_precio(request: Request, material_id: int, precio: str = Form(max_length=64),
-                  vigente_desde: date = Form(), proveedor_id: int | None = Form(None),
+                  vigente_desde: date = Form(), proveedor_id: str = Form(""),
                   user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
     exigir(puede_gestionar_precios(user, db))
     try:
@@ -106,7 +107,8 @@ def cargar_precio(request: Request, material_id: int, precio: str = Form(max_len
     if not 0 < centavos <= 2**63 - 1:
         raise HTTPException(422, "El precio debe ser positivo y caber en el catálogo.")
     fecha = datetime.combine(vigente_desde, time.min, TZ)
-    if not precios.cargar(db, user, material_id, centavos, fecha, proveedor_id=proveedor_id, request=request):
+    proveedor = id_opcional(proveedor_id, "el proveedor")
+    if not precios.cargar(db, user, material_id, centavos, fecha, proveedor_id=proveedor, request=request):
         raise HTTPException(404, "Material o proveedor no encontrado")
     db.commit()
     return RedirectResponse(f"/precios/materiales/{material_id}", 303)

@@ -1,7 +1,7 @@
 ---
 id: T-029
 titulo: Parte diario de obra (borrador, confirmación inmutable y numeración)
-estado: lista
+estado: en-curso
 rama: codex/T-029-parte-diario
 creada: 2026-11-24
 depende: T-028
@@ -35,15 +35,19 @@ fotos y observaciones) y lo confirme; al confirmarlo recibe un **número correla
 - Permisos: `puede_registrar_obra` (T-028). Cliente: 404.
 
 ## Criterios de aceptación
-- [ ] CA1 Confirmar dos partes a la vez (dos conexiones) → números 1 y 2, sin repetir.
-- [ ] CA2 UPDATE de un parte confirmado o de sus fotos por SQL → error de la base; editar por la ruta → 409.
-- [ ] CA3 Confirmar registra los avances en el cronograma y el avance de obra cambia.
-- [ ] CA4 Pruebas portadas de obra-report-w que apliquen (listalas en la Bitácora con su origen).
-- [ ] CA5 Aislamiento y roles; foto que no es imagen → 400. Sensores y suite en verde.
+- [x] CA1 Confirmar dos partes a la vez (dos conexiones) → números 1 y 2, sin repetir.
+- [x] CA2 UPDATE de un parte confirmado o de sus fotos por SQL → error de la base; editar por la ruta → 409.
+- [x] CA3 Confirmar registra los avances en el cronograma y el avance de obra cambia.
+- [x] CA4 Pruebas portadas de obra-report-w que apliquen (listalas en la Bitácora con su origen).
+- [x] CA5 Aislamiento y roles; foto que no es imagen → 400. Sensores y suite en verde.
 
 ## Fuera de alcance
 - PDF (T-030), clima y audio (T-031), notas y pedidos (T-032).
 
 ## Bitácora del ejecutor
+
+- Porté `obra-report-w/tests/test_consultas.py::test_reporte_confirmado_solo_permite_consultas` a `tests/test_partes.py::test_parte_confirmado_solo_permite_consultas_y_registra_el_avance`, con rutas HTTP reales y controles SQL. Porté las secciones y los faltantes de `obra_bot/reporte.py`, y adapté la secuencia de `obra_bot/db.py` a transacciones de PostgreSQL.
+- La confirmación toma un bloqueo por obra, registra avances y escribe el número y la auditoría en la misma transacción. Dos conexiones recibieron 1 y 2. Las fotos se guardan como versiones internas para que el limpiador del almacén conserve los blobs.
+- La cámara usa el control nativo del navegador y no requiere JavaScript. Jornada no laborable conserva la revisión de condiciones y EPP, sin exigir personal, avance o fotos.
 
 ## Dictamen del auditor

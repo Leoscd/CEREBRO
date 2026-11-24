@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
@@ -12,7 +12,7 @@ from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, puede_registrar_obra
 from app.routers.presupuestos import _texto
 from app.security import check_csrf, require_user
-from app.services import auditoria, cronograma, excel
+from app.services import almacen, auditoria, cronograma, excel, partes
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -43,6 +43,106 @@ def _ruta(proyecto):
 def _auditar(db, user, proyecto, accion, objeto, objeto_id, request, detalle=None):
     auditoria.registrar(db, user, accion, proyecto_id=proyecto["id"], objeto=objeto,
                         objeto_id=objeto_id, request=request, detalle=detalle)
+
+
+def _ruta_partes(proyecto):
+    return f"{_ruta(proyecto)}/partes"
+
+
+def _vista_parte(request, db, user, proyecto, parte):
+    fotos = partes.fotos(db, proyecto, parte["id"])
+    return templates.TemplateResponse(request, "obra/parte.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "parte": parte,
+        "destino": f"{_ruta_partes(proyecto)}/{parte['id']}", "fotos": fotos,
+        "faltantes": partes.faltantes(parte, len(fotos)), "tareas": cronograma.avance_obra(db, proyecto, parte["fecha"])["tareas"],
+        "editable": parte["estado"] == "borrador" and puede_registrar_obra(user, proyecto),
+    })
+
+
+@router.get("/partes")
+def listado_partes(codigo: str, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    return templates.TemplateResponse(request, "obra/partes.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "partes": partes.listar(db, proyecto),
+        "editar": puede_registrar_obra(user, proyecto),
+    })
+
+
+@router.get("/partes/hoy")
+def ver_parte_hoy(codigo: str, request: Request, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    parte = partes.buscar_dia(db, proyecto, user, hoy_local())
+    if parte:
+        return _vista_parte(request, db, user, proyecto, parte)
+    return templates.TemplateResponse(request, "obra/partes.html", {
+        "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "partes": partes.listar(db, proyecto), "editar": True,
+    })
+
+
+@router.post("/partes/hoy")
+def iniciar_parte(codigo: str, request: Request, user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    parte, _ = partes.crear_borrador(db, user, proyecto, hoy_local(), request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte['id']}", 303)
+
+
+@router.get("/partes/{parte_id}")
+def ver_parte(codigo: str, parte_id: int, request: Request, user=Depends(require_user),
+              db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    return _vista_parte(request, db, user, proyecto, partes.obtener(db, proyecto, parte_id))
+
+
+@router.post("/partes/{parte_id}/secciones/{seccion}")
+async def guardar_seccion(codigo: str, parte_id: int, seccion: str, request: Request,
+                          user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    partes.actualizar_seccion(db, user, proyecto, parte_id, seccion, await request.form(), request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#{seccion}", 303)
+
+
+@router.get("/partes/{parte_id}/fotos/{foto_id}")
+def ver_foto(codigo: str, parte_id: int, foto_id: int, user=Depends(require_user),
+             db: Connection = Depends(db_dependency)):
+    proyecto = _obra(db, user, codigo)
+    foto = next((f for f in partes.fotos(db, proyecto, parte_id) if f["id"] == foto_id), None)
+    if foto is None or not (blob := almacen.ruta(foto["sha256"])).is_file():
+        raise HTTPException(404, "Foto no encontrada.")
+    return FileResponse(blob, media_type=foto["mime"], headers={"X-Content-Type-Options": "nosniff"})
+
+
+@router.post("/partes/{parte_id}/fotos")
+def cargar_foto(codigo: str, parte_id: int, request: Request, foto: UploadFile = File(),
+                descripcion: str = Form("", max_length=600), tarea_id: str = Form("", max_length=20),
+                user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    try:
+        tarea = cronograma._entero(tarea_id, 1, 2**63 - 1) if tarea_id.strip() else None
+    except ValueError as error:
+        raise HTTPException(400, "Elegí una tarea válida.") from error
+    partes.agregar_foto(db, user, proyecto, parte_id, foto.file, descripcion.strip(), tarea, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#fotos", 303)
+
+
+@router.post("/partes/{parte_id}/fotos/{foto_id}/quitar")
+def quitar_foto(codigo: str, parte_id: int, foto_id: int, request: Request, user=Depends(check_csrf),
+                db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    partes.quitar_foto(db, user, proyecto, parte_id, foto_id, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#fotos", 303)
+
+
+@router.post("/partes/{parte_id}/confirmar")
+def confirmar_parte(codigo: str, parte_id: int, request: Request, user=Depends(check_csrf),
+                    db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    partes.confirmar(db, user, proyecto, parte_id, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}", 303)
 
 
 @router.get("")

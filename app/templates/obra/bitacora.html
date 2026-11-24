@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Bitácora · {{ proyecto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+<p><a href="{{ ruta }}">Obra · {{ proyecto.nombre }}</a></p>
+<h1>Bitácora de obra</h1>
+<section class="card">
+  <form method="get" action="{{ ruta }}/bitacora" class="stack">
+    <div class="fila-form">
+      <label>Desde <input type="date" name="desde" value="{{ desde or '' }}"></label>
+      <label>Hasta <input type="date" name="hasta" value="{{ hasta or '' }}"></label>
+    </div>
+    <fieldset>
+      <legend>Tipos de evento</legend>
+      {% for tipo, nombre in tipos.items() %}
+      <label><input type="checkbox" name="tipo" value="{{ tipo }}" {% if tipo in seleccion %}checked{% endif %}>{{ nombre }}</label>
+      {% endfor %}
+    </fieldset>
+    <label>Buscar en partes confirmados <input type="search" name="q" value="{{ q }}" maxlength="200"></label>
+    <div><button class="btn">Aplicar</button> <a href="{{ ruta }}/bitacora">Limpiar filtros</a></div>
+  </form>
+</section>
+{% if q %}
+<section class="card">
+  <h2>Coincidencias en partes</h2>
+  <ul>{% for hallazgo in hallazgos %}
+    <li><a href="{{ ruta }}/partes/{{ hallazgo.id }}">Parte N.º {{ hallazgo.numero }} · {{ hallazgo.fecha | solo_fecha }}</a>
+      <p>{{ hallazgo.texto }}</p></li>
+    {% else %}<li>Sin coincidencias.</li>{% endfor %}</ul>
+</section>
+{% endif %}
+<section class="card">
+  <h2>Últimos eventos</h2>
+  <ol>{% for evento in eventos %}
+    <li>{{ evento.fecha | solo_fecha }} · {{ tipos[evento.tipo] }} · <a href="{{ evento.enlace }}">{{ evento.titulo }}</a></li>
+    {% else %}<li>Sin eventos en el período.</li>{% endfor %}</ol>
+</section>
+{% endblock %}

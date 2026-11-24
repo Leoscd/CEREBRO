@@ -1,11 +1,11 @@
 ---
 id: T-034
 titulo: Agente Obra
-estado: en-curso
+estado: en-revision
 rama: codex/T-034-agente-obra
 creada: 2026-11-24
 depende: —
-pr:
+pr: 50
 ---
 
 ## Objetivo
@@ -29,10 +29,10 @@ parte del día: lo que escribe en el borrador pasa por aprobación, y cerrar el 
 - Contexto de sesión, nunca de argumentos. Instrucciones en rioplatense, breve, pensado para el celular.
 
 ## Criterios de aceptación
-- [ ] CA1 Guion con modelo falso: registrar un avance → pendiente; aprobar → queda en el borrador; cerrar el parte → número asignado y PDF encolado.
-- [ ] CA2 Con el parte confirmado, cualquier escritura → "parte cerrado" y nada cambia.
-- [ ] CA3 Aislamiento: ids de otra obra o empresa → "no encontrado". Sin `MODELO_OBRA` con proveedor `openai` → 503 claro.
-- [ ] CA4 Sensores y suite en verde (sin red).
+- [x] CA1 Guion con modelo falso: registrar un avance → pendiente; aprobar → queda en el borrador; cerrar el parte → número asignado y PDF encolado.
+- [x] CA2 Con el parte confirmado, cualquier escritura → "parte cerrado" y nada cambia.
+- [x] CA3 Aislamiento: ids de otra obra o empresa → "no encontrado". Sin `MODELO_OBRA` con proveedor `openai` → 503 claro.
+- [x] CA4 Sensores y suite en verde (sin red).
 
 ## Fuera de alcance
 - Canales de WhatsApp/Telegram (después del plan). Fotos por el agente.

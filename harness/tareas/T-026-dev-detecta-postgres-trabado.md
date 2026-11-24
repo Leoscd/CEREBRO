@@ -1,7 +1,7 @@
 ---
 id: T-026
 titulo: El servidor de desarrollo detecta un Postgres trabado
-estado: en-revision
+estado: hecha
 rama: codex/T-026-dev-detecta-postgres-trabado
 creada: 2026-11-23
 depende: —
@@ -44,3 +44,4 @@ diga qué pasó y cómo seguir (hallazgo H-010 de `harness/log.md`).
 - Se verificó en un pgdata temporal el arranque desde cero, la detención y el reinicio con un candado viejo. SELECT 1 funcionó antes y después del reinicio.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Solo renombra el candado viejo, nunca borra; subprocess sin shell; Postgres real intacto. Merge: #36.

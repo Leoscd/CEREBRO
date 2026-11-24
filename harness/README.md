@@ -40,6 +40,10 @@ Mergear en orden con **merge común** (no squash: el siguiente PR chocaría con 
 Por cada PR: re-apuntarlo a `main` (`gh pr edit N --base main`) → mergeable → `gh pr merge N --merge`.
 Al terminar, borrar las ramas que ya estén contenidas en `main`.
 
+**Cerrar un hito** (`harness/hitos.md` → `hecho`): contrastar **cada viñeta** del hito en `docs/PLAN.md` ("Hitos" y
+"Verificación") contra tareas `hecha`; lo que falte va a un lote antes de cerrarlo (H-012). Recorrerlo en el navegador.
+Toda fórmula de dinero en una tarea lleva una prueba de "la suma de las partes = el total" (H-011).
+
 ## Los cinco bloques y dónde viven
 1. **Contexto (feedforward):** `AGENTS.md` corto = mapa de punteros. Skills con divulgación progresiva en
    `.agents/skills/` (Codex) y `.claude/skills/` (Claude). La tarea trae punteros, no copias.

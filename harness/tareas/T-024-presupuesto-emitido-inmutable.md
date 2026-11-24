@@ -1,7 +1,7 @@
 ---
 id: T-024
 titulo: Presupuesto emitido inmutable en la base
-estado: en-revision
+estado: hecha
 rama: codex/T-024-presupuesto-emitido-inmutable
 creada: 2026-11-23
 depende: T-023
@@ -43,3 +43,4 @@ el historial de precios. Hoy lo cuida solo la aplicación (hallazgo de la audito
 - Las pruebas SQL directas comprobaron el bloqueo. Emisión, nueva versión, Excel y verificador siguieron pasando y el total de referencia quedó en 11542 centavos.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Triggers bloquean cambios a emitidos, sus rubros e ítems (incluido moverlos y TRUNCATE). Merge: #34.

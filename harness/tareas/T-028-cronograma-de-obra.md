@@ -1,7 +1,7 @@
 ---
 id: T-028
 titulo: Cronograma de obra con avance previsto y real
-estado: lista
+estado: en-curso
 rama: codex/T-028-cronograma-de-obra
 creada: 2026-11-24
 depende: —
@@ -36,15 +36,19 @@ y ver cuánto debería ir (previsto) contra cuánto va (real), por tarea y para 
 - Pantalla `/proyecto/{codigo}/obra`: tabla tipo Gantt simple (barra previsto/real por tarea), avance físico y económico, tareas atrasadas arriba.
 
 ## Criterios de aceptación
-- [ ] CA1 Días hábiles: casos con fin de semana y feriado de la empresa (portá los casos de calendario de obra-report-w si existen).
-- [ ] CA2 Avance de obra ponderado y avance económico **calculados a mano en la prueba**, y la suma de las partes da el total (H-011).
-- [ ] CA3 Avances inmutables en la base; el vigente es el último.
-- [ ] CA4 Aislamiento y roles: otra empresa 404; colaborador ve y no registra (403); cliente 404.
-- [ ] CA5 Sensores y suite en verde.
+- [x] CA1 Días hábiles: casos con fin de semana y feriado de la empresa (portá los casos de calendario de obra-report-w si existen).
+- [x] CA2 Avance de obra ponderado y avance económico **calculados a mano en la prueba**, y la suma de las partes da el total (H-011).
+- [x] CA3 Avances inmutables en la base; el vigente es el último.
+- [x] CA4 Aislamiento y roles: otra empresa 404; colaborador ve y no registra (403); cliente 404.
+- [x] CA5 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Dependencias entre tareas y camino crítico calculado. Reprogramación automática.
 
 ## Bitácora del ejecutor
+
+- Porté de obra-report-w/obra_bot/cronograma.py el calendario, los feriados fijos, la normalización, la búsqueda y el avance previsto. No encontré casos unitarios directos para el calendario. Agregué tests/test_cronograma.py::test_calendario_con_fin_de_semana_y_feriado para cubrir fin de semana, feriados de empresa y la semilla en el alta.
+- Separé avance físico ponderado y avance económico. La prueba deriva a mano 4.286/5.714 pb previstos/reales y 2.079 centavos sobre 4.494 de base emitida.
+- La importación usa la planilla y la firma del repositorio. El avance se agrega por fecha, con el ID como desempate. Los clientes quedan fuera del módulo.
 
 ## Dictamen del auditor

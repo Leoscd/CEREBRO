@@ -116,6 +116,10 @@ def puede_editar_presupuesto(u: dict, proyecto: dict) -> bool:
     return not es_cliente(u) and (es_admin(u) or proyecto.get("mi_rol") in {"director", "administracion"})
 
 
+def puede_registrar_obra(u: dict, proyecto: dict) -> bool:
+    return not es_cliente(u) and (es_admin(u) or proyecto.get("mi_rol") in {"director", "dt"})
+
+
 def puede_gestionar_equipo(u: dict, proyecto: dict) -> bool:
     return puede_editar_proyecto(u, proyecto)
 

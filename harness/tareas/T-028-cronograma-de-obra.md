@@ -1,7 +1,7 @@
 ---
 id: T-028
 titulo: Cronograma de obra con avance previsto y real
-estado: en-revision
+estado: hecha
 rama: codex/T-028-cronograma-de-obra
 creada: 2026-11-24
 depende: —
@@ -52,3 +52,4 @@ y ver cuánto debería ir (previsto) contra cuánto va (real), por tarea y para 
 - La importación usa la planilla y la firma del repositorio. El avance se agrega por fecha, con el ID como desempate. Los clientes quedan fuera del módulo.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Cuentas verificadas (42,86 %; 672 + 1407 = 2079 → 46,26 %); avances solo inserción; feriados sembrados por empresa. Merge: #41.

@@ -1,7 +1,7 @@
 ---
 id: T-033
 titulo: Bitácora del proyecto y resumen de obra
-estado: en-revision
+estado: hecha
 rama: codex/T-033-bitacora-y-resumen-de-obra
 creada: 2026-11-24
 depende: T-032
@@ -42,3 +42,4 @@ con lo importante: avance físico y económico, atrasos, alertas y notas abierta
 - La búsqueda conserva la puntuación por palabras de `obra_bot/herramientas.py` y ordena por fecha. No hizo falta una migración.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Pruebas portadas (resumen, últimos partes, búsqueda sin acentos); bitácora aislada por obra. Merge: #46.

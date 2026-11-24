@@ -3,7 +3,7 @@ id: L-004
 titulo: M3 — seguimiento de obra (+ T-027 de M2)
 hito: M3
 estado: abierto
-etapa_activa: 1
+etapa_activa: 2        # etapa 1 aprobada y mergeada el 2026-11-24 (PRs #40-#48)
 ---
 
 # Lote L-004 · M3 seguimiento de obra
@@ -35,7 +35,7 @@ T-035 y T-036 salieron del recorrido de M2 en el navegador (agregadas el 2026-11
 ## Etapa 2 — agente (solo si `etapa_activa: 2`)
 | Orden | Tarea | Depende de |
 |---|---|---|
-| 8 | `harness/tareas/T-034-agente-obra.md` | T-033 |
+| 10 | `harness/tareas/T-034-agente-obra.md` | — (etapa 1 en `main`: sale de `main`, PR contra `main`) |
 
 **PARADA 2 (fin de M3):** PR de T-034 abierto con CI en verde → pará y reportá.
 

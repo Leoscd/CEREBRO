@@ -1,7 +1,7 @@
 ---
 id: T-036
 titulo: Números y porcentajes en formato argentino en precios y presupuestos
-estado: en-revision
+estado: hecha
 rama: codex/T-036-numeros-en-formato-argentino
 creada: 2026-11-24
 depende: T-035
@@ -40,3 +40,4 @@ Detalles encontrados en el recorrido de M2.
 - Incluí la pantalla de certificados por compartir los formularios de porcentajes del módulo de presupuestos. Mantiene los mismos cálculos y los mismos límites de acumulación.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-24). Filtros porcentaje y cantidad en formato argentino; % → pb exacto con rechazo de ambigüedades. Merge: #48.

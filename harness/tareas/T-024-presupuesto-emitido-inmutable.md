@@ -1,11 +1,11 @@
 ---
 id: T-024
 titulo: Presupuesto emitido inmutable en la base
-estado: lista
+estado: en-revision
 rama: codex/T-024-presupuesto-emitido-inmutable
 creada: 2026-11-23
 depende: T-023
-pr:
+pr: "#34"
 ---
 
 ## Objetivo
@@ -28,14 +28,18 @@ el historial de precios. Hoy lo cuida solo la aplicación (hallazgo de la audito
 - "Nueva versión" sigue creando un borrador nuevo (no toca el emitido).
 
 ## Criterios de aceptación
-- [ ] CA1 SQL directo: UPDATE de un ítem, INSERT de un rubro y DELETE de un presupuesto emitidos → error de la base.
-- [ ] CA2 Emitir y crear nueva versión siguen funcionando (las pruebas existentes de T-019/T-020/T-021 pasan sin cambiar expectativas).
-- [ ] CA3 El total del presupuesto de prueba (11542) no cambia.
-- [ ] CA4 Sensores y suite en verde.
+- [x] CA1 SQL directo: UPDATE de un ítem, INSERT de un rubro y DELETE de un presupuesto emitidos → error de la base.
+- [x] CA2 Emitir y crear nueva versión siguen funcionando (las pruebas existentes de T-019/T-020/T-021 pasan sin cambiar expectativas).
+- [x] CA3 El total del presupuesto de prueba (11542) no cambia.
+- [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Anular presupuestos emitidos.
 
 ## Bitácora del ejecutor
+
+- Los triggers protegen presupuesto, rubros e ítems, incluyendo movimientos entre padres y TRUNCATE. Se permite un UPDATE de cabecera que deja todos sus valores iguales.
+- Se toma el bloqueo del presupuesto padre antes de admitir cambios en el detalle. La emisión existente congela los PU antes de cambiar el estado, así que no requirió cambiar el servicio.
+- Las pruebas SQL directas comprobaron el bloqueo. Emisión, nueva versión, Excel y verificador siguieron pasando y el total de referencia quedó en 11542 centavos.
 
 ## Dictamen del auditor

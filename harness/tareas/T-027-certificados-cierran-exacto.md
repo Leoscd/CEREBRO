@@ -1,11 +1,11 @@
 ---
 id: T-027
 titulo: Certificados que cierran exacto al 100 %
-estado: en-curso
+estado: en-revision
 rama: codex/T-027-certificados-cierran-exacto
 creada: 2026-11-24
 depende: —
-pr:
+pr: "#40"
 ---
 
 ## Objetivo

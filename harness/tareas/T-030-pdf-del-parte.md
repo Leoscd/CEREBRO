@@ -1,11 +1,11 @@
 ---
 id: T-030
 titulo: PDF numerado del parte diario
-estado: en-curso
+estado: en-revision
 rama: codex/T-030-pdf-del-parte
 creada: 2026-11-24
 depende: T-029
-pr:
+pr: "#43"
 ---
 
 ## Objetivo

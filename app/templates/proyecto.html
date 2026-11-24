@@ -38,6 +38,15 @@
         <p><button class="btn">Guardar</button></p>
       </form>
     </details>
+    <details id="ubicacion" class="editar"><summary>Ubicación para el clima de obra</summary>
+      <form method="post" action="/proyecto/{{ p.codigo }}/ubicacion" class="stack">
+        <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+        <label>Latitud <input name="lat" value="{{ p.lat if p.lat is not none else '' }}" inputmode="decimal" maxlength="30"></label>
+        <label>Longitud <input name="lon" value="{{ p.lon if p.lon is not none else '' }}" inputmode="decimal" maxlength="30"></label>
+        <p>Dejá ambos campos vacíos si querés quitar la ubicación.</p>
+        <button class="btn">Guardar ubicación</button>
+      </form>
+    </details>
     {% endif %}
   </div>
 

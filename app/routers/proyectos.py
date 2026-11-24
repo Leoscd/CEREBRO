@@ -1,5 +1,6 @@
 """Ficha del proyecto, edición, equipo e hitos."""
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -114,6 +115,35 @@ def editar(
                             objeto_id=p["codigo"], detalle=cambios, request=request)
     db.commit()
     return RedirectResponse(f"/proyecto/{codigo}", status_code=303)
+
+
+def _coordenada(entrada: str, limite: int) -> float:
+    try:
+        valor = Decimal(entrada.strip().replace(",", "."))
+        if not valor.is_finite() or not -limite <= valor <= limite:
+            raise InvalidOperation
+        return float(valor.quantize(Decimal("0.000001")))
+    except InvalidOperation as error:
+        raise HTTPException(400, "Revisá la latitud y la longitud del proyecto.") from error
+
+
+@router.post("/{codigo}/ubicacion")
+def guardar_ubicacion(codigo: str, request: Request, lat: str = Form("", max_length=30),
+                      lon: str = Form("", max_length=30), user=Depends(check_csrf),
+                      db: Connection = Depends(db_dependency)):
+    proyecto = obtener_proyecto(db, user, codigo)
+    exigir(puede_editar_proyecto(user, proyecto))
+    if not lat.strip() and not lon.strip():
+        latitud = longitud = None
+    else:
+        latitud, longitud = _coordenada(lat, 90), _coordenada(lon, 180)
+    if (proyecto["lat"], proyecto["lon"]) != (latitud, longitud):
+        db.execute("UPDATE proyectos SET lat=%s,lon=%s,actualizado_en=now() WHERE empresa_id=%s AND id=%s",
+                   (latitud, longitud, user["empresa_id"], proyecto["id"]))
+        auditoria.registrar(db, user, "proyecto.ubicacion_guardada", proyecto_id=proyecto["id"], objeto="proyecto",
+                            objeto_id=proyecto["codigo"], request=request)
+        db.commit()
+    return RedirectResponse(f"/proyecto/{codigo}#ubicacion", 303)
 
 
 @router.post("/{codigo}/equipo")

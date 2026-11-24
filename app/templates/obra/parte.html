@@ -20,6 +20,7 @@
 <div class="stack">
   <details id="condiciones" class="card">
     <summary>Clima y terreno</summary>
+    <p>Clima del día · {{ datos.condiciones.propuesto.resumen if datos.condiciones.propuesto else "Sin datos" }}</p>
     {% if editable %}
     <form method="post" action="{{ destino }}/secciones/condiciones" class="stack">
       {{ csrf() }}
@@ -159,6 +160,29 @@
     {% endif %}
   </details>
 
+  {% if editable %}
+  <details id="dictado" class="card" {% if propuestas_audio %}open{% endif %}>
+    <summary>Dictar observaciones</summary>
+    <form method="post" action="{{ destino }}/audios" enctype="multipart/form-data" class="stack">
+      {{ csrf() }}
+      <label>Audio de hasta 20 MB <input type="file" name="audio" accept="audio/*,.webm,.m4a" capture="user" required></label>
+      <button class="btn">Transcribir</button>
+    </form>
+    {% for propuesta in propuestas_audio %}
+      {% if propuesta.texto %}
+      <form method="post" action="{{ destino }}/audios/{{ propuesta.id }}/aceptar" class="stack">
+        {{ csrf() }}
+        <label>Revisá el dictado <textarea name="texto" maxlength="5000" required>{{ propuesta.texto }}</textarea></label>
+        <button class="btn">Agregar a observaciones</button>
+      </form>
+      {% elif propuesta.estado == "fallido" %}
+      <p>No se pudo transcribir el audio.</p>
+      {% else %}
+      <p>Transcripción en proceso. <a href="{{ destino }}#dictado">Actualizar</a></p>
+      {% endif %}
+    {% endfor %}
+  </details>
+  {% endif %}
   <details id="resumen" class="card">
     <summary>Observaciones</summary>
     {% if editable %}

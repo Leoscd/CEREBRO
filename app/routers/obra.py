@@ -12,7 +12,7 @@ from app.db import db_dependency
 from app.permisos import es_cliente, exigir, obtener_proyecto, puede_registrar_obra
 from app.routers.presupuestos import _texto
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, cronograma, excel, partes
+from app.services import almacen, auditoria, cronograma, excel, jobs, partes, transcripcion
 from app.services.tiempo import hoy_local
 from app.templates import templates
 
@@ -51,11 +51,12 @@ def _ruta_partes(proyecto):
 
 def _vista_parte(request, db, user, proyecto, parte):
     fotos = partes.fotos(db, proyecto, parte["id"])
+    editable = parte["estado"] == "borrador" and puede_registrar_obra(user, proyecto)
     return templates.TemplateResponse(request, "obra/parte.html", {
         "user": user, "proyecto": proyecto, "ruta": _ruta(proyecto), "parte": parte,
         "destino": f"{_ruta_partes(proyecto)}/{parte['id']}", "fotos": fotos,
         "faltantes": partes.faltantes(parte, len(fotos)), "tareas": cronograma.avance_obra(db, proyecto, parte["fecha"])["tareas"],
-        "editable": parte["estado"] == "borrador" and puede_registrar_obra(user, proyecto),
+        "editable": editable, "propuestas_audio": transcripcion.propuestas(db, proyecto, parte["id"]) if editable else [],
     })
 
 
@@ -82,7 +83,10 @@ def ver_parte_hoy(codigo: str, request: Request, user=Depends(require_user), db:
 @router.post("/partes/hoy")
 def iniciar_parte(codigo: str, request: Request, user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
     proyecto = _editar_obra(db, user, codigo)
-    parte, _ = partes.crear_borrador(db, user, proyecto, hoy_local(), request=request)
+    parte, nuevo = partes.crear_borrador(db, user, proyecto, hoy_local(), request=request)
+    if nuevo:
+        jobs.encolar(db, user["empresa_id"], "parte.clima", {"proyecto_id": proyecto["id"], "parte_id": parte["id"]},
+                     max_intentos=1)
     db.commit()
     return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte['id']}", 303)
 
@@ -134,6 +138,24 @@ def quitar_foto(codigo: str, parte_id: int, foto_id: int, request: Request, user
     partes.quitar_foto(db, user, proyecto, parte_id, foto_id, request=request)
     db.commit()
     return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#fotos", 303)
+
+
+@router.post("/partes/{parte_id}/audios")
+def subir_audio(codigo: str, parte_id: int, request: Request, audio: UploadFile = File(),
+                user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    transcripcion.cargar(db, user, proyecto, parte_id, audio.file, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#dictado", 303)
+
+
+@router.post("/partes/{parte_id}/audios/{audio_id}/aceptar")
+def aceptar_audio(codigo: str, parte_id: int, audio_id: int, request: Request, texto: str = Form(max_length=5000),
+                  user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
+    proyecto = _editar_obra(db, user, codigo)
+    transcripcion.aceptar(db, user, proyecto, parte_id, audio_id, texto, request=request)
+    db.commit()
+    return RedirectResponse(f"{_ruta_partes(proyecto)}/{parte_id}#resumen", 303)
 
 
 @router.post("/partes/{parte_id}/confirmar")

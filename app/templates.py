@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
@@ -17,12 +18,31 @@ def _static_version() -> str:
     return str(int(css.stat().st_mtime)) if css.exists() else "0"
 
 
+_SEPARADORES = str.maketrans(",.", ".,")
+
+
+def _porcentaje(pb: int, unidad: bool = True) -> str:
+    valor = Decimal(pb).scaleb(-2)
+    if unidad:
+        return f"{valor:,.2f}".translate(_SEPARADORES) + " %"
+    return f"{valor:.2f}".replace(".", ",")
+
+
+def _cantidad(valor: Decimal, agrupar: bool = True) -> str:
+    texto = format(valor, ",f" if agrupar else "f")
+    if "." in texto:
+        texto = texto.rstrip("0").rstrip(".")
+    return texto.translate(_SEPARADORES)
+
+
 templates.env.globals["static_version"] = _static_version()
 templates.env.globals["marca"] = config.MARCA
 templates.env.globals["csrf_token"] = csrf_token
 templates.env.filters["fecha"] = formatear
 templates.env.filters["solo_fecha"] = lambda v: formatear(v, con_hora=False)
 templates.env.filters["pesos"] = dinero.formatear
+templates.env.filters["porcentaje"] = _porcentaje
+templates.env.filters["cantidad"] = _cantidad
 
 ETAPAS = {
     "anteproyecto": "Anteproyecto",

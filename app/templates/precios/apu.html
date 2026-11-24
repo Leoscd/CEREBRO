@@ -7,12 +7,12 @@
 <section class="card">
   <h2>Desglose</h2>
   <table>
-    <thead><tr><th>Insumo</th><th>Cantidad</th><th>Desperdicio (pb)</th><th>Precio</th><th>Subtotal</th>{% if editar %}<th>Acción</th>{% endif %}</tr></thead>
+    <thead><tr><th>Insumo</th><th>Cantidad</th><th>Desperdicio</th><th>Precio</th><th>Subtotal</th>{% if editar %}<th>Acción</th>{% endif %}</tr></thead>
     <tbody>
     {% for fila in calculo.detalle + calculo.faltantes %}
       {% set insumo = fila.insumo if fila.insumo is defined else fila %}
-      <tr><td>{{ insumo.nombre }}</td><td>{{ insumo.cantidad }} {{ insumo.unidad }}</td>
-        <td>{{ insumo.desperdicio_pb }}</td>
+      <tr><td>{{ insumo.nombre }}</td><td>{{ insumo.cantidad | cantidad }} {{ insumo.unidad }}</td>
+        <td>{{ insumo.desperdicio_pb | porcentaje }}</td>
         <td>{{ fila.precio_centavos | pesos if fila.precio_centavos is defined else "Sin precio vigente" }}</td>
         <td>{{ fila.subtotal_centavos | pesos if fila.subtotal_centavos is defined else "—" }}</td>
         {% if editar %}<td><form method="post" action="/precios/apus/{{ apu.id }}/insumos/{{ insumo.material_id }}/quitar">
@@ -32,8 +32,8 @@
     <option value="">Elegí un insumo</option>
     {% for material in materiales %}<option value="{{ material.id }}">{{ material.codigo }} · {{ material.nombre }}</option>{% endfor %}
   </select></label>
-  <label>Cantidad por unidad <input name="cantidad" type="number" min="0.0001" step="0.0001" required></label>
-  <label>Desperdicio (puntos básicos) <input name="desperdicio_pb" type="number" min="0" step="1" value="0" required></label>
+  <label>Cantidad por unidad <input name="cantidad" inputmode="decimal" maxlength="64" required></label>
+  <label>Desperdicio (%) <input name="desperdicio_pct" inputmode="decimal" maxlength="14" value="0" required></label>
   <button class="btn">Guardar insumo</button>
 </form>
 <form class="card" method="post" action="/precios/apus/{{ apu.id }}/editar">

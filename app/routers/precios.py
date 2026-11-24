@@ -1,7 +1,6 @@
 """Catálogo interno de materiales, proveedores y precios."""
 
 from datetime import date, datetime, time
-from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -10,7 +9,7 @@ from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
-from app.formularios import id_opcional
+from app.formularios import cantidad_decimal, id_opcional, porcentaje_a_pb
 from app.permisos import es_cliente, exigir, puede_gestionar_precios
 from app.security import check_csrf, require_user
 from app.services import apus, auditoria, dinero, excel, precios
@@ -216,11 +215,13 @@ def editar_apu(request: Request, apu_id: int, codigo: str = Form(max_length=80),
 
 @router.post("/apus/{apu_id}/insumos")
 def guardar_insumo(request: Request, apu_id: int, material_id: int = Form(gt=0, le=2**63-1),
-                   cantidad: Decimal = Form(gt=0, max_digits=14, decimal_places=4),
+                   cantidad: str = Form(max_length=64), desperdicio_pct: str | None = Form(None),
                    desperdicio_pb: int = Form(0, ge=0, le=2**31-1),
                    user=Depends(check_csrf), db: Connection = Depends(db_dependency)):
     exigir(puede_gestionar_precios(user, db))
     empresa_id = user["empresa_id"]
+    cantidad_insumo = cantidad_decimal(cantidad, positiva=True)
+    desperdicio = porcentaje_a_pb(desperdicio_pct, "el desperdicio", anterior=desperdicio_pb)
     fila = db.execute(
         """INSERT INTO apu_insumos(empresa_id,apu_id,material_id,cantidad,desperdicio_pb)
            SELECT a.empresa_id,a.id,m.id,%s,%s FROM apus a
@@ -228,7 +229,7 @@ def guardar_insumo(request: Request, apu_id: int, material_id: int = Form(gt=0, 
             WHERE a.empresa_id=%s AND a.id=%s
            ON CONFLICT (empresa_id,apu_id,material_id)
            DO UPDATE SET cantidad=excluded.cantidad, desperdicio_pb=excluded.desperdicio_pb RETURNING apu_id""",
-        (cantidad, desperdicio_pb, material_id, empresa_id, apu_id),
+        (cantidad_insumo, desperdicio, material_id, empresa_id, apu_id),
     ).fetchone()
     if not fila:
         raise HTTPException(404, "APU o insumo no encontrado")

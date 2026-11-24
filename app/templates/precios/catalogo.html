@@ -15,12 +15,12 @@
 {% endif %}
 <div class="card">
   <table>
-    <thead><tr><th>Código</th><th>Insumo</th><th>Unidad</th><th>Precio vigente</th><th>Última variación (pb)</th></tr></thead>
+    <thead><tr><th>Código</th><th>Insumo</th><th>Unidad</th><th>Precio vigente</th><th>Última variación</th></tr></thead>
     <tbody>
       {% for material in materiales %}
       <tr><td>{{ material.codigo }}</td><td><a href="/precios/materiales/{{ material.id }}">{{ material.nombre }}</a></td>
         <td>{{ material.unidad }}</td><td>{{ material.actual_centavos | pesos if material.actual_centavos is not none else "Sin precio" }}</td>
-        <td>{{ material.variacion_pb if material.variacion_pb is not none else "—" }}</td></tr>
+        <td>{{ material.variacion_pb | porcentaje if material.variacion_pb is not none else "—" }}</td></tr>
       {% else %}
       <tr><td colspan="5">Todavía no hay insumos.</td></tr>
       {% endfor %}

@@ -1,7 +1,6 @@
 """Presupuestos internos de un proyecto."""
 
 from datetime import date
-from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -10,7 +9,7 @@ from psycopg import Connection
 from psycopg.errors import UniqueViolation
 
 from app.db import db_dependency
-from app.formularios import id_opcional
+from app.formularios import cantidad_decimal, id_opcional, porcentaje_a_pb
 from app.permisos import es_cliente, exigir, obtener_proyecto, proyectos_visibles_sql, puede_editar_presupuesto
 from app.security import check_csrf, require_user
 from app.services import auditoria, certificados, dinero, excel, gastos, presupuestos, verificador
@@ -60,13 +59,20 @@ def _texto(valor, campo):
 
 
 def _ficha(nombre: str = Form(max_length=240), fecha_precios: date = Form(),
+           gastos_generales_pct: str | None = Form(None), beneficio_pct: str | None = Form(None),
+           impuestos_pct: str | None = Form(None),
            gastos_generales_pb: int = Form(0, ge=0, le=2**31-1),
            beneficio_pb: int = Form(0, ge=0, le=2**31-1), impuestos_pb: int = Form(0, ge=0, le=2**31-1)):
-    return (_texto(nombre, "el nombre"), fecha_precios, gastos_generales_pb, beneficio_pb, impuestos_pb)
+    return (
+        _texto(nombre, "el nombre"), fecha_precios,
+        porcentaje_a_pb(gastos_generales_pct, "los gastos generales", anterior=gastos_generales_pb),
+        porcentaje_a_pb(beneficio_pct, "el beneficio", anterior=beneficio_pb),
+        porcentaje_a_pb(impuestos_pct, "los impuestos", anterior=impuestos_pb),
+    )
 
 
 def _datos_item(rubro_id: int = Form(gt=0, le=2**63-1), descripcion: str = Form(max_length=240),
-                unidad: str = Form(max_length=40), cantidad: Decimal = Form(max_digits=14, decimal_places=4),
+                unidad: str = Form(max_length=40), cantidad: str = Form(max_length=64),
                 apu_id: str = Form(""), precio: str = Form("", max_length=64),
                 origen_cantidad: Literal["manual", "revit", "autocad"] = Form("manual")):
     precio = precio.strip()
@@ -82,7 +88,7 @@ def _datos_item(rubro_id: int = Form(gt=0, le=2**63-1), descripcion: str = Form(
         if not 0 <= centavos <= 2**63 - 1:
             raise HTTPException(422, "El precio manual debe ser un importe válido no negativo.")
     return {"rubro_id": rubro_id, "descripcion": _texto(descripcion, "la descripción"),
-            "unidad": _texto(unidad, "la unidad"), "cantidad": cantidad, "apu_id": apu,
+            "unidad": _texto(unidad, "la unidad"), "cantidad": cantidad_decimal(cantidad), "apu_id": apu,
             "precio_unitario_centavos": centavos, "origen_cantidad": origen_cantidad}
 
 
@@ -356,12 +362,14 @@ async def _avances_certificado(request: Request):
     for campo, valor in (await request.form()).multi_items():
         if not campo.startswith("avance_"):
             continue
+        porcentaje = campo.startswith("avance_pct_")
         try:
-            item_id, avance = int(campo.removeprefix("avance_")), int(valor)
+            item_id = int(campo.removeprefix("avance_pct_" if porcentaje else "avance_"))
+            avance = porcentaje_a_pb(valor, "el avance acumulado", maximo=10000) if porcentaje else int(valor)
         except (TypeError, ValueError) as error:
-            raise HTTPException(400, "Ingresá avances acumulados en puntos básicos enteros.") from error
+            raise HTTPException(400, "Revisá los avances acumulados de los ítems.") from error
         if item_id in avances or not 0 <= avance <= 10000:
-            raise HTTPException(400, "Cada ítem admite un solo avance de 0 a 10000 puntos básicos.")
+            raise HTTPException(400, "Cada ítem admite un solo avance del 0 al 100 %.")
         avances[item_id] = avance
     return avances
 

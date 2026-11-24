@@ -1,11 +1,11 @@
 ---
 id: T-036
 titulo: Números y porcentajes en formato argentino en precios y presupuestos
-estado: lista
+estado: en-revision
 rama: codex/T-036-numeros-en-formato-argentino
 creada: 2026-11-24
 depende: T-035
-pr:
+pr: "#48"
 ---
 
 ## Objetivo
@@ -26,13 +26,17 @@ Detalles encontrados en el recorrido de M2.
 - Cantidades: aceptar "42,5" además de "42.5".
 
 ## Criterios de aceptación
-- [ ] CA1 La pantalla del presupuesto de prueba muestra "15,00 %", "42,5" y los mismos totales que antes.
-- [ ] CA2 Cargar "15" en gastos generales guarda 1500 pb; "10,555" → 400.
-- [ ] CA3 Sensores y suite en verde (las pruebas de cuentas a mano no cambian sus totales).
+- [x] CA1 La pantalla del presupuesto de prueba muestra "15,00 %", "42,5" y los mismos totales que antes.
+- [x] CA2 Cargar "15" en gastos generales guarda 1500 pb; "10,555" → 400.
+- [x] CA3 Sensores y suite en verde (las pruebas de cuentas a mano no cambian sus totales).
 
 ## Fuera de alcance
 - Internacionalización a otros idiomas.
 
 ## Bitácora del ejecutor
+
+- Los filtros usan Decimal y muestran coma decimal. La cantidad pierde ceros finales y agrupa miles en las vistas. Los campos de edición muestran coma decimal y permiten tanto coma como punto.
+- Los formularios M2 usan porcentajes y los convierten a puntos básicos exactos. Se mantiene el formato previo en las rutas para solicitudes ya existentes. El test conserva el total de 11.542 centavos calculado a mano en T-021.
+- Incluí la pantalla de certificados por compartir los formularios de porcentajes del módulo de presupuestos. Mantiene los mismos cálculos y los mismos límites de acumulación.
 
 ## Dictamen del auditor

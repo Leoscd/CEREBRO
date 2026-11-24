@@ -1,11 +1,11 @@
 ---
 id: T-029
 titulo: Parte diario de obra (borrador, confirmación inmutable y numeración)
-estado: en-curso
+estado: en-revision
 rama: codex/T-029-parte-diario
 creada: 2026-11-24
 depende: T-028
-pr:
+pr: "#42"
 ---
 
 ## Objetivo

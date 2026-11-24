@@ -1,11 +1,11 @@
 ---
 id: T-026
 titulo: El servidor de desarrollo detecta un Postgres trabado
-estado: lista
+estado: en-revision
 rama: codex/T-026-dev-detecta-postgres-trabado
 creada: 2026-11-23
 depende: —
-pr:
+pr: "#36"
 ---
 
 ## Objetivo
@@ -28,14 +28,19 @@ diga qué pasó y cómo seguir (hallazgo H-010 de `harness/log.md`).
 - Sin dependencias nuevas si se puede (en Windows, `tasklist /FI "PID eq N"`; en Linux, `/proc/N/comm`); si hace falta `psutil`, explicalo en la Bitácora.
 
 ## Criterios de aceptación
-- [ ] CA1 Prueba con un `postmaster.pid` falso cuyo PID es del propio proceso de la prueba (no es Postgres) → se renombra y se avisa.
-- [ ] CA2 Con un PID inexistente → se renombra. Con un Postgres de verdad (el de las pruebas) → no se toca.
-- [ ] CA3 Nunca se borra nada de `data/`.
-- [ ] CA4 Sensores y suite en verde.
+- [x] CA1 Prueba con un `postmaster.pid` falso cuyo PID es del propio proceso de la prueba (no es Postgres) → se renombra y se avisa.
+- [x] CA2 Con un PID inexistente → se renombra. Con un Postgres de verdad (el de las pruebas) → no se toca.
+- [x] CA3 Nunca se borra nada de `data/`.
+- [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Cambiar de motor o de forma de levantar la base en desarrollo.
 
 ## Bitácora del ejecutor
+
+- Se revisan el proceso y la escucha TCP en Windows o el socket Unix en Linux. Los candados viejos se renombran con fecha y el Postgres activo se deja intacto.
+- Al superar el plazo, solo una marca nueva de disponibilidad en el log habilita el reintento. Cada arranque se ejecuta en un proceso breve para evitar la instancia incompleta que pgserver conserva tras un timeout.
+- Las pruebas usaron archivos temporales y el PostgreSQL embebido de la suite. Pasaron los sensores y pytest, sin agregar dependencias.
+- Se verificó en un pgdata temporal el arranque desde cero, la detención y el reinicio con un candado viejo. SELECT 1 funcionó antes y después del reinicio.
 
 ## Dictamen del auditor

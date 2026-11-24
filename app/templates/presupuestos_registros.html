@@ -1,0 +1,5 @@
+{% extends "presupuestos.html" %}
+{% block content %}
+{{ super() }}
+<p><a href="/proyecto/{{ proyecto.codigo }}/gastos">Gastos del proyecto</a></p>
+{% endblock %}

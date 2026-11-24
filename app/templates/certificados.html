@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Certificados · {{ presupuesto.nombre }} · {{ marca }}{% endblock %}
+{% block content %}
+{% set ruta = "/presupuestos/" ~ presupuesto.id ~ "/certificados" %}
+<p><a href="/presupuestos/{{ presupuesto.id }}">{{ presupuesto.nombre }} · v{{ presupuesto.version }}</a></p>
+<h1>Certificados de avance</h1>
+<section class="card">
+  <table>
+    <thead><tr><th>Número</th><th>Período</th><th>Estado</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for fila in filas %}
+      <tr><td><a href="{{ ruta }}/{{ fila.id }}">{{ fila.numero }}</a></td><td>{{ fila.periodo | solo_fecha }}</td>
+        <td>{{ fila.estado | capitalize }}</td><td>{{ fila.total_centavos | pesos }}</td></tr>
+      {% else %}<tr><td colspan="4">Todavía no hay certificados.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% if certificado %}
+<section class="card">
+  <h2>Certificado {{ certificado.numero }}</h2>
+  <table>
+    <thead><tr><th>Ítem</th><th>Anterior (pb)</th><th>Acumulado (pb)</th><th>Importe del período</th></tr></thead>
+    <tbody>
+      {% for item in certificado['items'] %}
+      <tr><td>{{ item.descripcion }}</td><td>{{ item.anterior_pb }}</td><td>{{ item.avance_pb }}</td>
+        <td>{{ item.certificado_centavos | pesos }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total {{ certificado.total_centavos | pesos }}</strong></p>
+  {% if editar and certificado.estado == "borrador" %}
+  <form method="post" action="{{ ruta }}/{{ certificado.id }}/emitir">
+    <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+    <button class="btn">Emitir certificado</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+{% if editar and base_items and (not filas or filas[-1].estado == "emitido") %}
+<form class="card stack" method="post" action="{{ ruta }}">
+  <h2>Nuevo certificado</h2>
+  <input type="hidden" name="csrf" value="{{ csrf_token(user.id) }}">
+  <label>Período <input type="month" name="periodo" value="{{ mes }}" required></label>
+  <p>Ingresá el avance acumulado. 100 puntos básicos equivalen al 1 %.</p>
+  {% for item in base_items %}
+  <label>{{ item.descripcion }} (pb)
+    <input name="avance_{{ item.id }}" type="number" min="{{ item.anterior_pb }}" max="10000"
+           step="1" value="{{ item.anterior_pb }}" required>
+  </label>
+  {% endfor %}
+  <button class="btn">Crear borrador</button>
+</form>
+{% endif %}
+{% endblock %}

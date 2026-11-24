@@ -1,11 +1,11 @@
 ---
 id: T-025
 titulo: Esqueleto de gastos y certificados
-estado: lista
+estado: en-revision
 rama: codex/T-025-gastos-y-certificados
 creada: 2026-11-23
 depende: T-024
-pr:
+pr: "#35"
 ---
 
 ## Objetivo
@@ -32,14 +32,19 @@ para que M3 (obra) y Gerencia tengan de dónde leer "presupuestado vs. gastado".
 - Permisos: editar = `puede_editar_presupuesto`; ver = miembros (no cliente). Certificado emitido = inmutable (mismo criterio que T-024).
 
 ## Criterios de aceptación
-- [ ] CA1 Dos certificados consecutivos (30 % y luego 75 % acumulado de un ítem) dan montos **calculados a mano en la prueba**.
-- [ ] CA2 Avance que baja o supera 100 % → 400; certificar un presupuesto en borrador → 409.
-- [ ] CA3 Un gasto con comprobante de otro proyecto → 404; aislamiento por empresa en todo.
-- [ ] CA4 Sensores y suite en verde.
+- [x] CA1 Dos certificados consecutivos (30 % y luego 75 % acumulado de un ítem) dan montos **calculados a mano en la prueba**.
+- [x] CA2 Avance que baja o supera 100 % → 400; certificar un presupuesto en borrador → 409.
+- [x] CA3 Un gasto con comprobante de otro proyecto → 404; aislamiento por empresa en todo.
+- [x] CA4 Sensores y suite en verde.
 
 ## Fuera de alcance
 - Retenciones, anticipos, redeterminaciones de precio, PDF del certificado. Integración contable.
 
 ## Bitácora del ejecutor
+
+- Los gastos filtran empresa y proyecto. El comprobante se valida con permisos y FK compuesta del mismo proyecto. El alta queda auditada.
+- Los certificados toman los subtotales sin variar del presupuesto emitido. Se conserva un borrador a la vez y el número se asigna bajo bloqueo del presupuesto.
+- Las pruebas manuales verificaron 504 y 756 centavos para 30 % y 75 % acumulado. También verificaron límites, inmutabilidad y aislamiento de comprobantes y certificados.
+- Los sensores y la suite completa pasaron. El alcance es el registro mínimo, sin PDF ni integración contable.
 
 ## Dictamen del auditor

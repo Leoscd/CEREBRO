@@ -3,13 +3,14 @@ import argparse
 import logging
 import os
 import signal
+from io import BytesIO
 from threading import Event
 
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from app.db import abrir_pool, cerrar_pool
-from app.services import almacen, clima, embeddings, jobs, pdf_parte, texto, transcripcion
+from app.services import almacen, clima, embeddings, gotenberg, jobs, pdf_parte, texto, transcripcion
 
 log = logging.getLogger(__name__)
 
@@ -43,17 +44,42 @@ def analizar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
     )
 
 
-def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
-    version_id = payload["version_id"]
-    archivo = db.execute(
-        """SELECT v.sha256, a.id, a.proyecto_id
+def _version_vigente(db, empresa_id, version_id):
+    return db.execute(
+        """SELECT v.sha256, v.derivados, a.nombre, a.id, a.proyecto_id
              FROM versiones_archivo v JOIN archivos a ON a.empresa_id = v.empresa_id AND a.id = v.archivo_id
             WHERE v.empresa_id = %s AND v.id = %s AND a.version_actual_id = v.id""",
         (empresa_id, version_id),
     ).fetchone()
+
+
+def _guardar_derivados(db, empresa_id, version_id, datos):
+    db.execute("UPDATE versiones_archivo SET derivados=derivados || %s WHERE empresa_id=%s AND id=%s",
+               (Jsonb(datos), empresa_id, version_id))
+
+
+def vista_pdf(db, empresa_id, payload):
+    version_id = payload["version_id"]
+    archivo = _version_vigente(db, empresa_id, version_id)
+    if not archivo or archivo["derivados"].get("pdf"):
+        return
+    try:
+        pdf = gotenberg.a_pdf(almacen.ruta(archivo["sha256"]), archivo["nombre"])
+    except gotenberg.SinConversor:
+        _guardar_derivados(db, empresa_id, version_id, {"vista": "sin_conversor"})
+        return
+    sha, tamano = almacen.guardar(BytesIO(pdf), validar=texto.es_pdf)
+    _guardar_derivados(db, empresa_id, version_id, {"pdf": {"sha256": sha, "tamano": tamano}, "vista": "lista"})
+    jobs.encolar(db, empresa_id, "archivo.indexar", payload)
+
+
+def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
+    version_id = payload["version_id"]
+    archivo = _version_vigente(db, empresa_id, version_id)
     if archivo is None:
         return
-    fragmentos = list(texto.fragmentos_pdf(almacen.ruta(archivo["sha256"])))
+    origen = archivo["derivados"].get("pdf", archivo)
+    fragmentos = list(texto.fragmentos_pdf(almacen.ruta(origen["sha256"])))
     # La versión puede haber cambiado mientras se extraía el texto.
     vigente = db.execute(
         """SELECT 1 FROM archivos WHERE empresa_id = %s AND proyecto_id = %s AND id = %s AND version_actual_id = %s
@@ -133,6 +159,7 @@ MANEJADORES = {
     "parte.pdf": pdf_parte.publicar,
     "archivo.analizar": analizar_archivo,
     "archivo.indexar": indexar_archivo,
+    "archivo.vista_pdf": vista_pdf,
     "chunks.embeber": embeber_chunks,
     "biblioteca.indexar": indexar_biblioteca,
 }
@@ -155,7 +182,9 @@ def procesar_uno(db: Connection) -> bool:
             db.rollback()
     except Exception as error:
         db.rollback()
-        jobs.fallar(db, trabajo, str(error))
+        fallo = jobs.fallar(db, trabajo, str(error))
+        if fallo and trabajo["tipo"] == "archivo.vista_pdf" and trabajo["intentos"] >= trabajo["max_intentos"]:
+            _guardar_derivados(db, trabajo["empresa_id"], trabajo["payload"]["version_id"], {"vista": "error"})
         db.commit()
         log.warning("Falló el intento %s del trabajo %s", trabajo["intentos"], trabajo["id"])
     return True

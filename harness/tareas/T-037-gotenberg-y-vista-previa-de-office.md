@@ -1,7 +1,7 @@
 ---
 id: T-037
 titulo: Gotenberg y vista previa de Office
-estado: lista
+estado: en-curso
 rama: codex/T-037-gotenberg-y-vista-previa-de-office
 creada: 2026-11-25
 depende: —
@@ -67,5 +67,9 @@ entra en la búsqueda y en el Documentador con cita de página. La conversión l
 - ONLYOFFICE (T-041, T-042). Conversión de DWG. Vista previa de versiones anteriores (solo la actual).
 
 ## Bitácora del ejecutor
+
+- Gotenberg 8.32.0 en red interna, sin puertos publicados, con raíz de solo lectura y tmpfs para el perfil de LibreOffice y los temporales. El worker limita tiempo y tamaño de respuesta.
+- La vista, los chunks y las citas usan la versión vigente. La descarga sigue entregando el original. La prueba de búsqueda convierte con un PDF de dos páginas conocido.
+- Docker no está instalado en Windows ni en Ubuntu/WSL de esta PC. La validación de Compose se ejecuta en CI.
 
 ## Dictamen del auditor

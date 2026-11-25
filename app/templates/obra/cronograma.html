@@ -15,6 +15,10 @@
    <a class="btn btn-ghost" href="{{ ruta }}/bitacora">Bitácora</a>
    <a class="btn btn-ghost" href="{{ ruta }}/resumen">Resumen de obra</a></p>
 {% block navegacion_obra %}{% endblock %}
+<section id="panel-agente" class="card" data-agente="Obra" data-ruta="{{ ruta }}/agente"
+         data-csrf="{{ csrf_token(user.id) }}">
+  <h2>Agente de Obra</h2>
+</section>
 <section class="card">
   <table>
     <thead><tr><th>Tarea</th><th>Fechas</th><th>Previsto</th><th>Real</th><th>Atraso</th><th>Avance económico</th></tr></thead>
@@ -84,4 +88,7 @@
   </form>
 </details>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+<script type="module" src="/static/agente.js?v={{ static_version }}"></script>
 {% endblock %}

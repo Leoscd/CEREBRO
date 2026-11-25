@@ -1,11 +1,11 @@
 ---
 id: T-038
 titulo: DXF en el servidor y vista SVG
-estado: en-curso
+estado: en-revision
 rama: codex/T-038-dxf-en-el-servidor-y-vista-svg
 creada: 2026-11-25
 depende: T-037
-pr:
+pr: 54
 ---
 
 ## Objetivo
@@ -53,6 +53,8 @@ en la búsqueda y en el Documentador. Todo se procesa en el servidor con ezdxf; 
 - DWG (el plan prefiere exportar a DXF en la sesión de AutoCAD). Prender y apagar capas en el dibujo. Herramienta del agente para DXF.
 
 ## Bitácora del ejecutor
+
+- Sensores y suite completa en verde. La prueba de configuración de Docker corre en CI.
 
 - ezdxf 1.4.5 (PyPI); Leo autorizó las dependencias transitivas el 25/11. Se usa el backend SVG y una tabla de estilos en memoria. Los rásteres externos se omiten. Un worker sin fuentes del sistema usa la fuente vectorial incluida en Pillow.
 - El SVG se obtiene como imagen por la ruta privada del archivo. Capas, textos de modelo y atributos de bloques pertenecen a la misma versión que la vista. La publicación de chunks revalida esa versión con bloqueo de fila.

@@ -36,6 +36,7 @@ ARCHIVO_MAX_MB = int(os.getenv("ARCHIVO_MAX_MB", "1024"))
 GOTENBERG_URL = os.getenv("GOTENBERG_URL", "").strip().rstrip("/")
 GOTENBERG_TIMEOUT = int(os.getenv("GOTENBERG_TIMEOUT", "60"))
 GOTENBERG_PDF_MAX_MB = int(os.getenv("GOTENBERG_PDF_MAX_MB", "64"))
+DXF_MAX_MB = int(os.getenv("DXF_MAX_MB", "50"))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 EMBEDDINGS_PROVEEDOR = os.getenv("EMBEDDINGS_PROVEEDOR", "openai").strip().lower()

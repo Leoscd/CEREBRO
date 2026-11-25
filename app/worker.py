@@ -80,6 +80,10 @@ def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
         return
     origen = archivo["derivados"].get("pdf", archivo)
     fragmentos = list(texto.fragmentos_pdf(almacen.ruta(origen["sha256"])))
+    _reemplazar_chunks(db, empresa_id, archivo, version_id, fragmentos)
+
+
+def _reemplazar_chunks(db, empresa_id, archivo, version_id, fragmentos):
     # La versión puede haber cambiado mientras se extraía el texto.
     vigente = db.execute(
         """SELECT 1 FROM archivos WHERE empresa_id = %s AND proyecto_id = %s AND id = %s AND version_actual_id = %s
@@ -87,7 +91,7 @@ def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
         (empresa_id, archivo["proyecto_id"], archivo["id"], version_id),
     ).fetchone()
     if vigente is None:
-        return
+        return False
     db.execute(
         """DELETE FROM chunks WHERE empresa_id = %s AND proyecto_id = %s AND version_id IN (
                SELECT id FROM versiones_archivo WHERE empresa_id = %s AND archivo_id = %s
@@ -106,6 +110,39 @@ def indexar_archivo(db: Connection, empresa_id: int, payload: dict) -> None:
     )
     if fragmentos:
         jobs.encolar(db, empresa_id, "chunks.embeber", {"version_id": version_id})
+    return True
+
+
+def _guardar_meta(db, empresa_id, version_id, meta):
+    db.execute(
+        """UPDATE versiones_archivo SET derivados=jsonb_set(derivados, '{meta}',
+                    coalesce(derivados->'meta','{}'::jsonb) || %s) WHERE empresa_id=%s AND id=%s""",
+        (Jsonb(meta), empresa_id, version_id),
+    )
+
+
+def procesar_dxf(db, empresa_id, payload):
+    from ezdxf import DXFError
+    from app.services import dxf
+
+    version_id = payload["version_id"]
+    archivo = _version_vigente(db, empresa_id, version_id)
+    if not archivo or archivo["derivados"].get("svg"):
+        return
+    try:
+        doc = dxf.leer(almacen.ruta(archivo["sha256"]))
+        entradas = list(dxf.textos(doc))
+        meta = {"capas": dxf.capas(doc), "cantidad_textos": len(entradas)}
+        dibujo = dxf.svg(doc)
+    except (DXFError, ValueError):
+        _guardar_derivados(db, empresa_id, version_id, {"vista": "error"})
+        return
+    contenido = "\n".join(f"Capa {capa}: {valor}" for capa, valor in entradas)
+    fragmentos = [(1, i, s) for i, s in enumerate(texto._partir(contenido))]
+    if _reemplazar_chunks(db, empresa_id, archivo, version_id, fragmentos):
+        sha, tamano = almacen.guardar(BytesIO(dibujo))
+        _guardar_meta(db, empresa_id, version_id, {"dxf": meta})
+        _guardar_derivados(db, empresa_id, version_id, {"svg": {"sha256": sha, "tamano": tamano}, "vista": "lista"})
 
 
 def embeber_chunks(db: Connection, empresa_id: int, payload: dict) -> None:
@@ -160,6 +197,7 @@ MANEJADORES = {
     "archivo.analizar": analizar_archivo,
     "archivo.indexar": indexar_archivo,
     "archivo.vista_pdf": vista_pdf,
+    "archivo.dxf": procesar_dxf,
     "chunks.embeber": embeber_chunks,
     "biblioteca.indexar": indexar_biblioteca,
 }
@@ -183,7 +221,7 @@ def procesar_uno(db: Connection) -> bool:
     except Exception as error:
         db.rollback()
         fallo = jobs.fallar(db, trabajo, str(error))
-        if fallo and trabajo["tipo"] == "archivo.vista_pdf" and trabajo["intentos"] >= trabajo["max_intentos"]:
+        if fallo and trabajo["tipo"] in {"archivo.vista_pdf", "archivo.dxf"} and trabajo["intentos"] >= trabajo["max_intentos"]:
             _guardar_derivados(db, trabajo["empresa_id"], trabajo["payload"]["version_id"], {"vista": "error"})
         db.commit()
         log.warning("Falló el intento %s del trabajo %s", trabajo["intentos"], trabajo["id"])

@@ -1,7 +1,7 @@
 ---
 id: T-034
 titulo: Agente Obra
-estado: en-revision
+estado: hecha
 rama: codex/T-034-agente-obra
 creada: 2026-11-24
 depende: —
@@ -45,3 +45,4 @@ parte del día: lo que escribe en el borrador pasa por aprobación, y cerrar el 
 - Prueba portada de `obra-report-w/tests/test_consultas.py::test_reporte_confirmado_solo_permite_consultas` a `tests/test_agente_obra.py`. Cubre las cinco escrituras y la consulta de resumen después del cierre. Pruebas propias para el circuito con modelo falso, rechazo, cambio de día, permisos, aislamiento y configuración.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-25). Sin bloqueantes; aislamiento por sesión, doble control (proponer y aplicar) de permiso, fecha y estado del parte; prueba portada de obra-report-w. Calidad: el tope de 5000 de la nota acumulada se valida recién al aplicar. Merge: #50.

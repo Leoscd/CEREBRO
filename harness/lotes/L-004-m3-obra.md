@@ -2,8 +2,8 @@
 id: L-004
 titulo: M3 — seguimiento de obra (+ T-027 de M2)
 hito: M3
-estado: abierto
-etapa_activa: 2        # etapa 1 aprobada y mergeada el 2026-11-24 (PRs #40-#48)
+estado: cerrado
+etapa_activa: 2        # etapa 1 mergeada el 2026-11-24 (PRs #40-#48); etapa 2 (T-034) mergeada el 2026-11-25 (#50)
 ---
 
 # Lote L-004 · M3 seguimiento de obra

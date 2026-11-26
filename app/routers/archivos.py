@@ -17,7 +17,7 @@ from app.permisos import (
     puede_escribir_en_proyecto,
 )
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, jobs, texto
+from app.services import almacen, auditoria, gotenberg, jobs, texto
 from app.templates import templates
 
 router = APIRouter()
@@ -89,12 +89,16 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
            VALUES (%s, %s, %s, %s, %s, %s, 'subida', %s) RETURNING id""",
         (user["empresa_id"], archivo_id, numero, sha256, tamano, mime, user["id"]),
     ).fetchone()
-    db.execute(
-        "UPDATE archivos SET version_actual_id = %s, mime = %s WHERE empresa_id = %s AND id = %s",
+    archivo = db.execute(
+        "UPDATE archivos SET version_actual_id = %s, mime = %s WHERE empresa_id = %s AND id = %s RETURNING extension",
         (version["id"], mime, user["empresa_id"], archivo_id),
-    )
+    ).fetchone()
     jobs.encolar(db, user["empresa_id"], "archivo.analizar", {"version_id": version["id"]})
-    if texto.es_pdf(almacen.ruta(sha256)):
+    if archivo["extension"] in gotenberg.EXTENSIONES:
+        db.execute("""UPDATE versiones_archivo SET derivados=derivados || '{"vista":"pendiente"}'::jsonb
+                      WHERE empresa_id=%s AND id=%s""", (user["empresa_id"], version["id"]))
+        jobs.encolar(db, user["empresa_id"], "archivo.vista_pdf", {"version_id": version["id"]})
+    elif texto.es_pdf(almacen.ruta(sha256)):
         jobs.encolar(db, user["empresa_id"], "archivo.indexar", {"version_id": version["id"]})
     return version["id"]
 
@@ -151,6 +155,8 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
         (user["empresa_id"], archivo_id),
     ).fetchall()
     tipo = _tipo_de_vista(almacen.ruta(version["sha256"]), version["mime"], archivo["extension"]) if version else None
+    if version and version["derivados"].get("pdf"):
+        tipo = "pdf"
     return templates.TemplateResponse(
         request, "archivo.html",
         {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial, "tipo": tipo},
@@ -161,6 +167,18 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
 def contenido_archivo(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
     archivo = obtener_archivo(db, user, archivo_id)
     return _respuesta_archivo(archivo, _obtener_version(db, archivo), previsualizar=True)
+
+
+@router.get("/archivos/{archivo_id}/vista.pdf")
+def vista_pdf(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    archivo = obtener_archivo(db, user, archivo_id)
+    version = _obtener_version(db, archivo)
+    pdf = version["derivados"].get("pdf") if version else None
+    if not pdf or not (blob := almacen.ruta(pdf["sha256"])).is_file():
+        raise HTTPException(404, "Vista previa no disponible")
+    return FileResponse(blob, media_type="application/pdf", filename=Path(archivo["nombre"]).stem + ".pdf",
+                        content_disposition_type="inline",
+                        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"})
 
 
 @router.post("/proyectos/{codigo}/carpetas/{carpeta_id}/archivos")

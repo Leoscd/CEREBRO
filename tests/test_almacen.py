@@ -44,13 +44,17 @@ def test_limpieza_conserva_referencias_de_otra_empresa_en_ambas_tablas(db, db_ur
     assert respuesta.status_code == 303
     archivo, = archivos_del_proyecto(db, proyecto)
     criterio, _ = almacen.guardar(BytesIO(b"criterio empresa B"))
+    derivado, tamano = almacen.guardar(BytesIO(b"vista de la empresa B"))
+    db.execute("""UPDATE versiones_archivo SET derivados=jsonb_build_object(
+        'pdf',jsonb_build_object('sha256',%s::text,'tamano',%s::int)) WHERE empresa_id=%s""",
+               (derivado, tamano, admin_b["empresa_id"]))
     db.execute(
         """INSERT INTO biblioteca_documentos (empresa_id, titulo, tipo, version, sha256, nombre_archivo)
            VALUES (%s, 'Criterio B', 'criterio', '1', %s, 'criterio.pdf')""",
         (admin_b["empresa_id"], criterio),
     )
     db.commit()
-    rutas = [almacen.ruta(archivo["sha256"]), almacen.ruta(criterio)]
+    rutas = [almacen.ruta(archivo["sha256"]), almacen.ruta(criterio), almacen.ruta(derivado)]
     for ruta in rutas:
         _hace_horas(ruta, 25)
     salida = _limpiar(db_url, directorio_almacen, "--borrar")

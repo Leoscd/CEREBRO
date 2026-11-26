@@ -47,8 +47,10 @@ def _tamano_viejo(ruta: Path, corte: float) -> int | None:
 def _referenciado(db: Connection, sha256: str) -> bool:
     return db.execute(
         """SELECT EXISTS (SELECT 1 FROM versiones_archivo WHERE sha256 = %s)
-               OR EXISTS (SELECT 1 FROM biblioteca_documentos WHERE sha256 = %s)""",
-        (sha256, sha256),
+               OR EXISTS (SELECT 1 FROM biblioteca_documentos WHERE sha256 = %s)
+               OR EXISTS (SELECT 1 FROM versiones_archivo v, jsonb_each(v.derivados) d
+                          WHERE d.value->>'sha256' = %s)""",
+        (sha256, sha256, sha256),
     ).fetchone()[0]
 
 

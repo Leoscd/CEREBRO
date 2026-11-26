@@ -6,7 +6,7 @@
 <div class="vista-archivo" id="vista-archivo">
   <section class="card vista-archivo-visor" aria-label="Visor de archivo">
     {% if tipo == 'pdf' %}
-      <div id="visor-pdf" data-contenido="/archivos/{{ archivo.id }}/contenido" data-biblioteca="/static/vendor/pdfjs/pdf.mjs">
+      <div id="visor-pdf" data-contenido="/archivos/{{ archivo.id }}/{{ 'vista.pdf' if version.derivados.pdf else 'contenido' }}" data-biblioteca="/static/vendor/pdfjs/pdf.mjs">
         <div class="herramientas-visor">
           <button type="button" class="btn ghost small" id="pagina-anterior" disabled>Anterior</button>
           <label>Página <input type="number" id="numero-pagina" min="1" value="1" disabled></label>
@@ -28,7 +28,11 @@
         <img src="/archivos/{{ archivo.id }}/contenido" alt="{{ archivo.nombre }}" draggable="false">
       </div>
     {% else %}
-      <p class="muted">Sin vista previa todavía</p>
+      {% if version and version.derivados.vista == 'pendiente' %}
+      <p class="muted">Preparando la vista previa…</p>
+      {% elif version and version.derivados.vista in ('error', 'sin_conversor') %}
+      <p class="muted">La vista previa no está disponible. Descargá el archivo.</p>
+      {% else %}<p class="muted">Sin vista previa todavía</p>{% endif %}
       {% if version %}<a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar</a>{% endif %}
     {% endif %}
   </section>

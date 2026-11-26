@@ -1,7 +1,7 @@
 ---
 id: T-039
 titulo: IFC en el servidor
-estado: en-revision
+estado: hecha
 rama: codex/T-039-ifc-en-el-servidor
 creada: 2026-11-25
 depende: T-038
@@ -55,3 +55,4 @@ base como áreas y volúmenes), lo muestra en la ficha del archivo y lo deja en 
 - Pruebas con modelos IFC4 generados mediante la API de IfcOpenShell. Cubren unidades, pisos, búsqueda, aislamiento y cambio de versión durante el cálculo. La validación con una exportación real de Revit queda fuera de esta prueba.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-26). Unidades convertidas antes de sumar y redondeo al final; pisos y "sin piso"; versión vigente con prueba de carrera; aislamiento cubierto. Calidad: worker con 1 GB para IFC de hasta 200 MB; tipos en la tabla con nombre IFC en vez de castellano; falta probar con una exportación real de Revit. Merge: #55.

@@ -95,10 +95,13 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
     ).fetchone()
     jobs.encolar(db, user["empresa_id"], "archivo.analizar", {"version_id": version["id"]})
     extension = archivo["extension"]
-    if extension in gotenberg.EXTENSIONES or extension == "dxf":
-        db.execute("""UPDATE versiones_archivo SET derivados=derivados || '{"vista":"pendiente"}'::jsonb
-                      WHERE empresa_id=%s AND id=%s""", (user["empresa_id"], version["id"]))
-        tipo_job = "archivo.dxf" if extension == "dxf" else "archivo.vista_pdf"
+    tipo_job = "archivo.vista_pdf" if extension in gotenberg.EXTENSIONES else {
+        "dxf": "archivo.dxf", "ifc": "archivo.ifc",
+    }.get(extension)
+    if tipo_job:
+        clave = "vista_ifc" if extension == "ifc" else "vista"
+        db.execute("""UPDATE versiones_archivo SET derivados=derivados || jsonb_build_object(%s::text,'pendiente')
+                      WHERE empresa_id=%s AND id=%s""", (clave, user["empresa_id"], version["id"]))
         jobs.encolar(db, user["empresa_id"], tipo_job, {"version_id": version["id"]})
     elif texto.es_pdf(almacen.ruta(sha256)):
         jobs.encolar(db, user["empresa_id"], "archivo.indexar", {"version_id": version["id"]})

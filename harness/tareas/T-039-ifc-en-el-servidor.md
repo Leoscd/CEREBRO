@@ -1,7 +1,7 @@
 ---
 id: T-039
 titulo: IFC en el servidor
-estado: lista
+estado: en-curso
 rama: codex/T-039-ifc-en-el-servidor
 creada: 2026-11-25
 depende: T-038
@@ -46,5 +46,10 @@ base como áreas y volúmenes), lo muestra en la ficha del archivo y lo deja en 
 - Visor 3D (T-040). Precalcular `.frag` de That Open. Herramienta del agente para consultar el IFC (después; por ahora va por la búsqueda).
 
 ## Bitácora del ejecutor
+
+- Rama creada desde `main` en `7b6c269`, que integra T-037 y T-038. Se fijó IfcOpenShell 0.9.0.post1, ya instalado localmente. Se lee el IFC STEP directamente del almacén.
+- Las cantidades netas se convierten a m, m² y m³ antes de acumular por tipo y piso. Se respeta la unidad explícita de la cantidad y se redondea al centésimo después de sumar. La ficha distingue los elementos sin cantidades. Los elementos sin piso quedan identificados en su propio grupo.
+- El worker reutiliza la comprobación de versión vigente al publicar el resumen y los fragmentos. Un IFC ilegible o que supera el límite configurable de 200 MB deja un estado de error en la ficha.
+- Pruebas con modelos IFC4 generados mediante la API de IfcOpenShell. Cubren unidades, pisos, búsqueda, aislamiento y cambio de versión durante el cálculo. La validación con una exportación real de Revit queda fuera de esta prueba.
 
 ## Dictamen del auditor

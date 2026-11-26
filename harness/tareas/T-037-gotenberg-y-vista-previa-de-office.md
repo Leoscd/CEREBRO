@@ -1,7 +1,7 @@
 ---
 id: T-037
 titulo: Gotenberg y vista previa de Office
-estado: en-revision
+estado: hecha
 rama: codex/T-037-gotenberg-y-vista-previa-de-office
 creada: 2026-11-25
 depende: —
@@ -75,3 +75,4 @@ entra en la búsqueda y en el Documentador con cita de página. La conversión l
 - Docker no está instalado en Windows ni en Ubuntu/WSL de esta PC. La validación de Compose se ejecuta en CI.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-26). Gotenberg en red interna, sin descarga por URL y con deny list de LibreOffice; vista.pdf por obtener_archivo; limpieza respeta derivados. Pendiente: conversión con un DOCX real en el VPS (CI solo levanta el contenedor). Merge: #53.

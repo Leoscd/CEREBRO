@@ -1,7 +1,7 @@
 ---
 id: T-038
 titulo: DXF en el servidor y vista SVG
-estado: en-revision
+estado: hecha
 rama: codex/T-038-dxf-en-el-servidor-y-vista-svg
 creada: 2026-11-25
 depende: T-037
@@ -61,3 +61,4 @@ en la búsqueda y en el Documentador. Todo se procesa en el servidor con ezdxf; 
 - Probado con un plano generado por ezdxf, dos usuarios sin acceso, contenido ilegible y el límite de tamaño. Se comprobó por separado el dibujo de texto con un catálogo vacío de fuentes del sistema.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-26). SVG con CSP sandbox solo vía <img> y control de acceso; textos y capas a la búsqueda con versión revalidada. Calidad: sin tope de tiempo/entidades al dibujar DXF grandes; fuente de Pillow como respaldo es frágil. Merge: #54.

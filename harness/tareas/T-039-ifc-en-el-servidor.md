@@ -1,11 +1,11 @@
 ---
 id: T-039
 titulo: IFC en el servidor
-estado: lista
+estado: en-revision
 rama: codex/T-039-ifc-en-el-servidor
 creada: 2026-11-25
 depende: T-038
-pr:
+pr: 55
 ---
 
 ## Objetivo
@@ -36,15 +36,22 @@ base como áreas y volúmenes), lo muestra en la ficha del archivo y lo deja en 
 - `archivo.html`: si hay `meta.ifc`, una tabla corta con pisos y conteos (debajo del visor o en lugar del mensaje de "sin vista").
 
 ## Criterios de aceptación
-- [ ] CA1 Un IFC armado en la prueba con `ifcopenshell.api` (proyecto, un piso, dos muros con `Qto_WallBaseQuantities` y un nombre
+- [x] CA1 Un IFC armado en la prueba con `ifcopenshell.api` (proyecto, un piso, dos muros con `Qto_WallBaseQuantities` y un nombre
   de proyecto con frase única) → job → `meta.ifc` con 2 muros y el área sumada al centésimo; la búsqueda encuentra la frase.
-- [ ] CA2 Aislamiento: la ficha y la búsqueda de un usuario de otra empresa no muestran nada del resumen (404 / vacío).
-- [ ] CA3 IFC ilegible → error registrado, el job no queda reintentando.
-- [ ] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] CA2 Aislamiento: la ficha y la búsqueda de un usuario de otra empresa no muestran nada del resumen (404 / vacío).
+- [x] CA3 IFC ilegible → error registrado, el job no queda reintentando.
+- [x] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
 
 ## Fuera de alcance
 - Visor 3D (T-040). Precalcular `.frag` de That Open. Herramienta del agente para consultar el IFC (después; por ahora va por la búsqueda).
 
 ## Bitácora del ejecutor
+
+- Los sensores rápidos, la puerta de archivos protegidos y la suite completa pasaron. La comprobación local de Compose se omite cuando Docker no está instalado; se ejecuta en CI.
+
+- Rama creada desde `main` en `7b6c269`, que integra T-037 y T-038. Se fijó IfcOpenShell 0.9.0.post1, ya instalado localmente. Se lee el IFC STEP directamente del almacén.
+- Las cantidades netas se convierten a m, m² y m³ antes de acumular por tipo y piso. Se respeta la unidad explícita de la cantidad y se redondea al centésimo después de sumar. La ficha distingue los elementos sin cantidades. Los elementos sin piso quedan identificados en su propio grupo.
+- El worker reutiliza la comprobación de versión vigente al publicar el resumen y los fragmentos. Un IFC ilegible o que supera el límite configurable de 200 MB deja un estado de error en la ficha.
+- Pruebas con modelos IFC4 generados mediante la API de IfcOpenShell. Cubren unidades, pisos, búsqueda, aislamiento y cambio de versión durante el cálculo. La validación con una exportación real de Revit queda fuera de esta prueba.
 
 ## Dictamen del auditor

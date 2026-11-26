@@ -33,10 +33,30 @@
         <li>{{ capa.nombre }}{% if not capa.encendida %} · apagada{% endif %}{% if capa.congelada %} · congelada{% endif %}</li>
       {% endfor %}</ul>
       {% endif %}
+    {% elif version and version.derivados.get('meta', {}).get('ifc') %}
+      {% set modelo = version.derivados.meta.ifc %}
+      <h2>{{ modelo.proyecto }}</h2>
+      <p>{{ modelo.esquema }}{% if modelo.edificios %} · {{ modelo.edificios|join(', ') }}{% endif %}</p>
+      <table class="tabla">
+        <caption>Elementos y cantidades por piso</caption>
+        <thead><tr><th>Piso</th><th>Tipo</th><th>Elementos</th><th>Área neta (m²)</th><th>Volumen neto (m³)</th>
+          <th>Longitud (m)</th><th>Sin cantidades</th></tr></thead>
+        <tbody>
+        {% for piso in modelo.pisos %}
+          {% for tipo_ifc, grupo in piso.tipos.items() %}
+          <tr><th scope="row">{{ piso.nombre }}{% if piso.elevacion_m is not none %} ({{ piso.elevacion_m|cantidad }} m){% endif %}</th><td>{{ tipo_ifc }}</td><td>{{ grupo.cantidad }}</td>
+            {% for valor in (grupo.area_m2, grupo.volumen_m3, grupo.longitud_m) %}
+            <td>{{ valor|cantidad if valor is not none else '—' }}</td>
+            {% endfor %}<td>{{ grupo.sin_cantidades }}</td></tr>
+          {% else %}<tr><th>{{ piso.nombre }}</th><td colspan="6">Sin elementos computados</td></tr>{% endfor %}
+        {% else %}<tr><td colspan="7">Sin pisos registrados</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      <a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar IFC</a>
     {% else %}
-      {% if version and version.derivados.vista == 'pendiente' %}
+      {% if version and (version.derivados.vista == 'pendiente' or version.derivados.vista_ifc == 'pendiente') %}
       <p class="muted">Preparando la vista previa…</p>
-      {% elif version and version.derivados.vista in ('error', 'sin_conversor') %}
+      {% elif version and (version.derivados.vista in ('error', 'sin_conversor') or version.derivados.vista_ifc == 'error') %}
       <p class="muted">La vista previa no está disponible. Descargá el archivo.</p>
       {% else %}<p class="muted">Sin vista previa todavía</p>{% endif %}
       {% if version %}<a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar</a>{% endif %}

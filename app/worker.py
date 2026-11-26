@@ -145,6 +145,26 @@ def procesar_dxf(db, empresa_id, payload):
         _guardar_derivados(db, empresa_id, version_id, {"svg": {"sha256": sha, "tamano": tamano}, "vista": "lista"})
 
 
+def procesar_ifc(db, empresa_id, payload):
+    from ifcopenshell import Error
+    from app.services import ifc
+
+    version_id = payload["version_id"]
+    archivo = _version_vigente(db, empresa_id, version_id)
+    if not archivo or archivo["derivados"].get("vista_ifc") == "lista":
+        return
+    try:
+        datos = ifc.resumen(almacen.ruta(archivo["sha256"]))
+    except (Error, ValueError, RuntimeError):
+        _guardar_derivados(db, empresa_id, version_id, {"vista_ifc": "error"})
+        return
+    contenido = "\n".join(ifc.frases(datos))
+    fragmentos = [(1, i, s) for i, s in enumerate(texto._partir(contenido))]
+    if _reemplazar_chunks(db, empresa_id, archivo, version_id, fragmentos):
+        _guardar_meta(db, empresa_id, version_id, {"ifc": datos})
+        _guardar_derivados(db, empresa_id, version_id, {"vista_ifc": "lista"})
+
+
 def embeber_chunks(db: Connection, empresa_id: int, payload: dict) -> None:
     if "biblioteca_id" in payload:
         filas = db.execute(
@@ -198,6 +218,7 @@ MANEJADORES = {
     "archivo.indexar": indexar_archivo,
     "archivo.vista_pdf": vista_pdf,
     "archivo.dxf": procesar_dxf,
+    "archivo.ifc": procesar_ifc,
     "chunks.embeber": embeber_chunks,
     "biblioteca.indexar": indexar_biblioteca,
 }
@@ -221,8 +242,10 @@ def procesar_uno(db: Connection) -> bool:
     except Exception as error:
         db.rollback()
         fallo = jobs.fallar(db, trabajo, str(error))
-        if fallo and trabajo["tipo"] in {"archivo.vista_pdf", "archivo.dxf"} and trabajo["intentos"] >= trabajo["max_intentos"]:
-            _guardar_derivados(db, trabajo["empresa_id"], trabajo["payload"]["version_id"], {"vista": "error"})
+        estados_vista = {"archivo.vista_pdf": "vista", "archivo.dxf": "vista", "archivo.ifc": "vista_ifc"}
+        if fallo and trabajo["tipo"] in estados_vista and trabajo["intentos"] >= trabajo["max_intentos"]:
+            clave = estados_vista[trabajo["tipo"]]
+            _guardar_derivados(db, trabajo["empresa_id"], trabajo["payload"]["version_id"], {clave: "error"})
         db.commit()
         log.warning("Falló el intento %s del trabajo %s", trabajo["intentos"], trabajo["id"])
     return True

@@ -25,8 +25,14 @@
         <button type="button" class="btn ghost small" id="restablecer">Restablecer</button>
       </div>
       <div class="superficie-visor superficie-imagen" id="visor-imagen">
-        <img src="/archivos/{{ archivo.id }}/contenido" alt="{{ archivo.nombre }}" draggable="false">
+        <img src="/archivos/{{ archivo.id }}/{{ 'vista.svg' if version.derivados.svg else 'contenido' }}" alt="{{ archivo.nombre }}" draggable="false">
       </div>
+      {% if version.derivados.svg %}
+      <h3>Capas del plano</h3>
+      <ul>{% for capa in version.derivados.meta.dxf.capas %}
+        <li>{{ capa.nombre }}{% if not capa.encendida %} · apagada{% endif %}{% if capa.congelada %} · congelada{% endif %}</li>
+      {% endfor %}</ul>
+      {% endif %}
     {% else %}
       {% if version and version.derivados.vista == 'pendiente' %}
       <p class="muted">Preparando la vista previa…</p>

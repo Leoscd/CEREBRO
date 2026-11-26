@@ -16,3 +16,4 @@ openai==3.57.0
 openai-agents==0.22.2
 openpyxl==3.1.5
 fpdf2==2.8.5
+ezdxf==1.4.5

@@ -94,10 +94,12 @@ def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, sub
         (version["id"], mime, user["empresa_id"], archivo_id),
     ).fetchone()
     jobs.encolar(db, user["empresa_id"], "archivo.analizar", {"version_id": version["id"]})
-    if archivo["extension"] in gotenberg.EXTENSIONES:
+    extension = archivo["extension"]
+    if extension in gotenberg.EXTENSIONES or extension == "dxf":
         db.execute("""UPDATE versiones_archivo SET derivados=derivados || '{"vista":"pendiente"}'::jsonb
                       WHERE empresa_id=%s AND id=%s""", (user["empresa_id"], version["id"]))
-        jobs.encolar(db, user["empresa_id"], "archivo.vista_pdf", {"version_id": version["id"]})
+        tipo_job = "archivo.dxf" if extension == "dxf" else "archivo.vista_pdf"
+        jobs.encolar(db, user["empresa_id"], tipo_job, {"version_id": version["id"]})
     elif texto.es_pdf(almacen.ruta(sha256)):
         jobs.encolar(db, user["empresa_id"], "archivo.indexar", {"version_id": version["id"]})
     return version["id"]
@@ -157,6 +159,8 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
     tipo = _tipo_de_vista(almacen.ruta(version["sha256"]), version["mime"], archivo["extension"]) if version else None
     if version and version["derivados"].get("pdf"):
         tipo = "pdf"
+    elif version and version["derivados"].get("svg"):
+        tipo = "imagen"
     return templates.TemplateResponse(
         request, "archivo.html",
         {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial, "tipo": tipo},
@@ -171,14 +175,25 @@ def contenido_archivo(archivo_id: int, user=Depends(require_user), db: Connectio
 
 @router.get("/archivos/{archivo_id}/vista.pdf")
 def vista_pdf(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    return _vista_derivada(db, user, archivo_id, "pdf")
+
+
+@router.get("/archivos/{archivo_id}/vista.svg")
+def vista_svg(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
+    return _vista_derivada(db, user, archivo_id, "svg")
+
+
+def _vista_derivada(db, user, archivo_id, tipo):
     archivo = obtener_archivo(db, user, archivo_id)
     version = _obtener_version(db, archivo)
-    pdf = version["derivados"].get("pdf") if version else None
-    if not pdf or not (blob := almacen.ruta(pdf["sha256"])).is_file():
+    derivado = version["derivados"].get(tipo) if version else None
+    if not derivado or not (blob := almacen.ruta(derivado["sha256"])).is_file():
         raise HTTPException(404, "Vista previa no disponible")
-    return FileResponse(blob, media_type="application/pdf", filename=Path(archivo["nombre"]).stem + ".pdf",
-                        content_disposition_type="inline",
-                        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"})
+    headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"}
+    if tipo == "svg":
+        headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    return FileResponse(blob, media_type={"pdf": "application/pdf", "svg": "image/svg+xml"}[tipo],
+                        filename=f"{Path(archivo['nombre']).stem}.{tipo}", content_disposition_type="inline", headers=headers)
 
 
 @router.post("/proyectos/{codigo}/carpetas/{carpeta_id}/archivos")

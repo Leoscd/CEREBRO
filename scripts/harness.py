@@ -174,7 +174,8 @@ def rutas_tocar(texto: str) -> list[str]:
     bloque = re.search(r"^- Tocar:(.*?)(?=^- No tocar:|^## |\Z)", texto, re.M | re.S)
     if not bloque:
         return []
-    return [r for r in re.findall(r"`([^`]+)`", bloque.group(1)) if "/" in r or "." in r]
+    # H-015: `dir/**` o `dir/*` vale como prefijo del directorio.
+    return [r.rstrip("*") for r in re.findall(r"`([^`]+)`", bloque.group(1)) if "/" in r or "." in r]
 
 
 def cmd_auditar(args) -> None:

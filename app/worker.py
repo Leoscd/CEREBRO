@@ -9,8 +9,9 @@ from threading import Event
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
+from app import config
 from app.db import abrir_pool, cerrar_pool
-from app.services import almacen, clima, embeddings, gotenberg, jobs, pdf_parte, texto, transcripcion
+from app.services import almacen, clima, embeddings, gotenberg, jobs, pdf_parte, proceso_aislado, texto, transcripcion
 
 log = logging.getLogger(__name__)
 
@@ -121,22 +122,34 @@ def _guardar_meta(db, empresa_id, version_id, meta):
     )
 
 
-def procesar_dxf(db, empresa_id, payload):
-    from ezdxf import DXFError
+def _extraer_dxf(ruta):
     from app.services import dxf
+    doc = dxf.leer(ruta)
+    return dxf.capas(doc), list(dxf.textos(doc)), dxf.svg(doc)
 
+
+def _trabajo_pesado(funcion, ruta):
+    return proceso_aislado.ejecutar(funcion, ruta, segundos=config.TRABAJO_PESADO_SEGUNDOS,
+                                    memoria_mb=config.TRABAJO_PESADO_MEMORIA_MB)
+
+
+def _marcar_error_pesado(db, empresa_id, version_id, clave, error):
+    motivo = str(error) if isinstance(error, proceso_aislado.TrabajoAbortado) else "error de lectura"
+    log.warning("Versión %s, %s: %s", version_id, clave, motivo)
+    _guardar_derivados(db, empresa_id, version_id, {clave: "error"})
+
+
+def procesar_dxf(db, empresa_id, payload):
     version_id = payload["version_id"]
     archivo = _version_vigente(db, empresa_id, version_id)
     if not archivo or archivo["derivados"].get("svg"):
         return
     try:
-        doc = dxf.leer(almacen.ruta(archivo["sha256"]))
-        entradas = list(dxf.textos(doc))
-        meta = {"capas": dxf.capas(doc), "cantidad_textos": len(entradas)}
-        dibujo = dxf.svg(doc)
-    except (DXFError, ValueError):
-        _guardar_derivados(db, empresa_id, version_id, {"vista": "error"})
+        capas, entradas, dibujo = _trabajo_pesado(_extraer_dxf, almacen.ruta(archivo["sha256"]))
+    except (proceso_aislado.TrabajoAbortado, proceso_aislado.ErrorDelTrabajo) as error:
+        _marcar_error_pesado(db, empresa_id, version_id, "vista", error)
         return
+    meta = {"capas": capas, "cantidad_textos": len(entradas)}
     contenido = "\n".join(f"Capa {capa}: {valor}" for capa, valor in entradas)
     fragmentos = [(1, i, s) for i, s in enumerate(texto._partir(contenido))]
     if _reemplazar_chunks(db, empresa_id, archivo, version_id, fragmentos):
@@ -146,7 +159,6 @@ def procesar_dxf(db, empresa_id, payload):
 
 
 def procesar_ifc(db, empresa_id, payload):
-    from ifcopenshell import Error
     from app.services import ifc
 
     version_id = payload["version_id"]
@@ -154,9 +166,9 @@ def procesar_ifc(db, empresa_id, payload):
     if not archivo or archivo["derivados"].get("vista_ifc") == "lista":
         return
     try:
-        datos = ifc.resumen(almacen.ruta(archivo["sha256"]))
-    except (Error, ValueError, RuntimeError):
-        _guardar_derivados(db, empresa_id, version_id, {"vista_ifc": "error"})
+        datos = _trabajo_pesado(ifc.resumen, almacen.ruta(archivo["sha256"]))
+    except (proceso_aislado.TrabajoAbortado, proceso_aislado.ErrorDelTrabajo) as error:
+        _marcar_error_pesado(db, empresa_id, version_id, "vista_ifc", error)
         return
     contenido = "\n".join(ifc.frases(datos))
     fragmentos = [(1, i, s) for i, s in enumerate(texto._partir(contenido))]

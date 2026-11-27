@@ -106,7 +106,7 @@ services:
       - ./data/archivos:/srv/app/data/archivos
     depends_on:
       app: { condition: service_healthy }
-    mem_limit: 1g
+    mem_limit: 3g
     pids_limit: 128
 
   caddy:

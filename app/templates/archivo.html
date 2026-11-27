@@ -66,6 +66,8 @@
         </tbody>
       </table>
       <a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar IFC</a>
+    {% elif tipo == 'modelo3d' and version.derivados.vista_ifc == 'error' %}
+      <p class="muted">El resumen IFC no está disponible.</p>
     {% elif not tipo %}
       {% if version and (version.derivados.vista == 'pendiente' or version.derivados.vista_ifc == 'pendiente') %}
       <p class="muted">Preparando la vista previa…</p>

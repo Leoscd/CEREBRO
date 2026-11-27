@@ -130,3 +130,10 @@ def test_rutas_tocar_con_comodin():
     from scripts.harness import rutas_tocar
     texto = "- Tocar: `app/static/vendor/o3dv/**`, `docs/*`.\n- No tocar: `app/permisos.py`.\n"
     assert rutas_tocar(texto) == ["app/static/vendor/o3dv/", "docs/"]
+
+
+def test_rutas_tocar_archivos_de_raiz_sin_extension():
+    # H-016: `Caddyfile` es una ruta; `MODELO_OBRA` (variable) no.
+    from scripts.harness import rutas_tocar
+    texto = "- Tocar: `Caddyfile`, `.env.example` (`MODELO_OBRA`).\n- No tocar: `app/permisos.py`.\n"
+    assert rutas_tocar(texto) == ["Caddyfile", ".env.example"]

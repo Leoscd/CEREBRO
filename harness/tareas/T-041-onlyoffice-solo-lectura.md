@@ -1,7 +1,7 @@
 ---
 id: T-041
 titulo: ONLYOFFICE solo lectura
-estado: en-revision
+estado: hecha
 rama: codex/T-041-onlyoffice-solo-lectura
 creada: 2026-11-25
 depende: — (etapa 2 en main)
@@ -61,3 +61,4 @@ de la ficha del archivo. Si no está configurado, se sigue viendo la vista PDF d
 - Las pruebas cubren los tres formatos, el PDF alternativo y las restricciones de descarga. La CLI de Docker no está instalada en esta PC. El CI verifica ambas configuraciones de Compose y ejecuta el humo del perfil normal. El editor gráfico requiere un Document Server configurado.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-26). Descarga sin sesión con token firmado (10 min) filtrado por empresa del token, papelera y versión; config HS256 en modo vista; perfil aparte con imagen 10.0.0.1 (verificada en Docker Hub) y red interna. Calidad: el servicio onlyoffice no usa el bloque `endurecido` (sin tope de logs). Merge: #60.

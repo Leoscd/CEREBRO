@@ -1,3 +1,4 @@
+import io
 import json
 import re
 import shutil
@@ -10,7 +11,7 @@ import pytest
 from itsdangerous import TimestampSigner
 
 from app import config
-from app.services import onlyoffice
+from app.services import almacen, onlyoffice
 from tests.test_visor import crear_archivo as crear_archivo
 from tests.test_subida import directorio_almacen as directorio_almacen
 
@@ -92,3 +93,93 @@ def test_perfil_onlyoffice(tmp_path):
     docs = servicios("--profile", "onlyoffice")["onlyoffice"]
     assert docs["image"].startswith("onlyoffice/documentserver:") and not docs.get("ports")
     assert int(docs["mem_limit"]) == 6 * 1024**3
+
+
+@pytest.fixture
+def sesion_editor(office, crear_archivo, app_client, monkeypatch):
+    monkeypatch.setattr(config, "ONLYOFFICE_URL_INTERNA", "http://onlyoffice")
+    usuario, ruta = crear_archivo("Informe.docx", b"original", "application/octet-stream")
+    editor = leer_editor(usuario.get(ruta).text)
+    assert editor["editorConfig"]["mode"] == "edit"
+    assert editor["document"]["permissions"]["edit"] is True
+    return app_client(), urlsplit(editor["editorConfig"]["callbackUrl"]).path, editor["document"]["key"]
+
+
+def evento(clave, status=2, url="http://onlyoffice/cache/documento.docx"):
+    return {"key": clave, "status": status, "url": url}
+
+
+def firmado(datos):
+    return jwt.encode(datos, config.ONLYOFFICE_JWT_SECRET, algorithm="HS256")
+
+
+def test_guardado_version_auditoria_jobs_y_reintento(sesion_editor, monkeypatch, db, mundo):
+    cliente, ruta, clave = sesion_editor
+    respuestas = [b"editado", b"editado", b"final", b"editado"]
+    monkeypatch.setattr(onlyoffice, "descargar_version", lambda url: almacen.guardar(io.BytesIO(respuestas.pop(0))))
+    datos = evento(clave, status=6)
+    for _ in range(2):
+        # El campo url del cuerpo nunca sustituye al del JWT de la cabecera.
+        r = cliente.post(ruta, json={"url": "https://invalido.test", "status": 4},
+                         headers={"Authorization": "Bearer " + firmado({"payload": datos})})
+        assert r.json() == {"error": 0}
+    assert cliente.post(ruta, json={"token": firmado(evento(clave))}).json() == {"error": 0}
+    assert cliente.post(ruta, json={"token": firmado(datos)}).json() == {"error": 0}
+    versiones = db.execute("SELECT * FROM versiones_archivo ORDER BY numero").fetchall()
+    assert [v["numero"] for v in versiones] == [1, 2, 3]
+    assert [almacen.ruta(v["sha256"]).read_bytes() for v in versiones] == [b"original", b"editado", b"final"]
+    for v in versiones[1:]:
+        assert v["origen"] == "subida" and v["subida_por"] == mundo["ana"]["id"]
+        jobs = db.execute("SELECT tipo FROM jobs WHERE payload->>'version_id'=%s", (str(v["id"]),))
+        assert {j["tipo"] for j in jobs} == {"archivo.analizar", "archivo.vista_pdf"}
+    auditoria = db.execute("SELECT usuario_id FROM auditoria WHERE accion='archivo.version_onlyoffice'").fetchall()
+    assert len(auditoria) == 2 and all(f["usuario_id"] == mundo["ana"]["id"] for f in auditoria)
+
+
+def test_callback_invalido_no_escribe(sesion_editor, db, mundo, monkeypatch):
+    cliente, ruta, clave = sesion_editor
+    monkeypatch.setattr(onlyoffice, "descargar_version", lambda url: pytest.fail("Descarga no autorizada"))
+    datos = evento(clave)
+    a = db.execute("SELECT * FROM archivos").fetchone()
+    ajeno = onlyoffice.token_callback(mundo["eb"]["id"], a["id"], a["version_actual_id"], mundo["admin_b"]["id"])
+    for destino, jwt_servidor in [
+        (ruta, "invalido"), (ruta + "x", firmado(datos)), ("/onlyoffice/callback/" + ajeno, firmado(datos)),
+        (ruta, firmado(evento("otra-clave"))),
+        (ruta, firmado(evento(clave, url="https://otro.test/cache"))),
+        (ruta, firmado(evento(clave, url="https://onlyoffice/cache"))),
+        (ruta, firmado(evento(clave, url="http://onlyoffice:8888/cache"))),
+    ]:
+        assert cliente.post(destino, json={"token": jwt_servidor}).json() == {"error": 1}
+    assert cliente.post(ruta, json={"token": firmado(evento(clave, status=1))}).json() == {"error": 0}
+    with monkeypatch.context() as m:
+        ahora = TimestampSigner.get_timestamp
+        m.setattr(TimestampSigner, "get_timestamp", lambda self: ahora(self) + 7 * 86400 + 1)
+        assert cliente.post(ruta, json={"token": firmado(datos)}).json() == {"error": 1}
+    db.execute("UPDATE proyecto_miembros SET rol='lector' WHERE proyecto_id=%s AND usuario_id=%s",
+               (a["proyecto_id"], mundo["ana"]["id"]))
+    db.commit()
+    assert cliente.post(ruta, json={"token": firmado(datos)}).json() == {"error": 1}
+    assert db.execute("SELECT count(*) AS n FROM versiones_archivo").fetchone()["n"] == 1
+
+
+def test_cliente_con_acceso_solo_lee(office, crear_archivo, db, como):
+    _, ruta = crear_archivo("Compartido.xlsx", b"original", "application/octet-stream")
+    db.execute("UPDATE archivos SET visible_cliente=true")
+    db.commit()
+    editor = leer_editor(como("cliente@a.test").get(ruta).text)
+    assert editor["editorConfig"]["mode"] == "view" and not editor["document"]["permissions"]["edit"]
+    assert "callbackUrl" not in editor["editorConfig"]
+
+
+def test_descarta_edicion_si_hubo_subida_manual(sesion_editor, como, db, mundo, monkeypatch):
+    from tests.conftest import csrf_de
+
+    cliente, ruta, clave = sesion_editor
+    archivo = db.execute("SELECT id FROM archivos").fetchone()
+    r = como("ana@a.test").post(f"/archivos/{archivo['id']}/versiones", data={"csrf": csrf_de(mundo["ana"])},
+                                files={"archivo": ("Informe.docx", b"subida manual", "application/octet-stream")})
+    assert r.status_code == 303
+    monkeypatch.setattr(onlyoffice, "descargar_version", lambda url: almacen.guardar(io.BytesIO(b"editor anterior")))
+    assert cliente.post(ruta, json={"token": firmado(evento(clave))}).json() == {"error": 1}
+    actual = db.execute("SELECT sha256, numero FROM versiones_archivo ORDER BY numero DESC LIMIT 1").fetchone()
+    assert actual["numero"] == 2 and almacen.ruta(actual["sha256"]).read_bytes() == b"subida manual"

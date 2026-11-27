@@ -1,12 +1,15 @@
 """Subida y descarga de archivos del proyecto."""
 import re
 import unicodedata
+from http.client import HTTPException as ErrorTransporte
 from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from itsdangerous import BadData
+from jwt import InvalidTokenError
 from psycopg import Connection
+from starlette.concurrency import run_in_threadpool
 
 from app import config
 from app.db import db_dependency
@@ -84,7 +87,11 @@ def _mime_archivo(archivo: UploadFile) -> str:
 
 def _crear_version(db: Connection, user: dict, archivo_id: int, numero: int, subida: UploadFile) -> int:
     sha256, tamano = almacen.guardar(subida.file)
-    mime = _mime_archivo(subida)
+    return _registrar_version(db, user, archivo_id, numero, sha256, tamano, _mime_archivo(subida))
+
+
+def _registrar_version(db: Connection, user: dict, archivo_id: int, numero: int,
+                       sha256: str, tamano: int, mime: str) -> int:
     version = db.execute(
         """INSERT INTO versiones_archivo (empresa_id, archivo_id, numero, sha256, tamano_bytes, mime,
                                            origen, subida_por)
@@ -206,6 +213,71 @@ def descarga_onlyoffice(token: str, db: Connection = Depends(db_dependency)):
     if version is None:
         raise HTTPException(404, "Versión no encontrada")
     return _respuesta_archivo(version, version)
+
+
+def _editor_autorizado(db, empresa_id, archivo_id, usuario_id, *, bloquear=False):
+    user = db.execute("""SELECT id, empresa_id, rol_empresa, cliente_id FROM usuarios
+                         WHERE empresa_id=%s AND id=%s AND activo""", (empresa_id, usuario_id)).fetchone()
+    if user is None:
+        raise HTTPException(404)
+    archivo = obtener_archivo(db, user, archivo_id, bloquear=bloquear)
+    exigir(archivo["extension"] in onlyoffice.TIPOS and puede_escribir_en_proyecto(user, archivo))
+    return user, archivo
+
+
+def _guardar_callback(db, ids, evento, request):
+    empresa_id, archivo_id, base_id, usuario_id = ids
+    _editor_autorizado(db, empresa_id, archivo_id, usuario_id)
+    base = db.execute("""SELECT id, sha256 FROM versiones_archivo
+                         WHERE empresa_id=%s AND archivo_id=%s AND id=%s""",
+                      (empresa_id, archivo_id, base_id)).fetchone()
+    if not base or evento.get("key") != onlyoffice.clave_documento(archivo_id, base):
+        return {"error": 1}
+    url = evento.get("url")
+    if not onlyoffice.url_guardado_valida(url):
+        return {"error": 1}
+    sha, tamano = onlyoffice.descargar_version(url)
+    # Durante la descarga pueden cambiar la asignación, la papelera o la versión actual.
+    user, archivo = _editor_autorizado(db, empresa_id, archivo_id, usuario_id, bloquear=True)
+    actual = _obtener_version(db, archivo)
+    if actual["sha256"] == sha:
+        return {"error": 0}
+    if actual["id"] != base_id and actual["derivados"].get("onlyoffice_base") != base_id:
+        return {"error": 1}
+    huella = onlyoffice.huella_guardado(evento)
+    repetido = db.execute("""SELECT 1 FROM versiones_archivo WHERE empresa_id=%s AND archivo_id=%s
+                             AND sha256=%s AND derivados->>'onlyoffice_base'=%s
+                             AND derivados->>'onlyoffice_evento'=%s""",
+                          (empresa_id, archivo_id, sha, str(base_id), huella)).fetchone()
+    if repetido:
+        return {"error": 0}
+    numero = actual["numero"] + 1
+    nueva = _registrar_version(db, user, archivo_id, numero, sha, tamano, actual["mime"])
+    db.execute("""UPDATE versiones_archivo SET derivados=derivados ||
+                  jsonb_build_object('onlyoffice_base', %s::bigint, 'onlyoffice_evento', %s::text)
+                  WHERE empresa_id=%s AND archivo_id=%s AND id=%s""", (base_id, huella, empresa_id, archivo_id, nueva))
+    auditoria.registrar(db, user, "archivo.version_onlyoffice", proyecto_id=archivo["proyecto_id"],
+                        objeto="archivo", objeto_id=archivo_id, detalle={"version_id": nueva, "numero": numero},
+                        request=request)
+    db.commit()
+    return {"error": 0}
+
+
+@router.post("/onlyoffice/callback/{token}")
+async def callback_onlyoffice(token: str, request: Request, db: Connection = Depends(db_dependency)):
+    try:
+        ids = onlyoffice.leer_token_callback(token)
+        autorizacion = request.headers.get("authorization", "")
+        cuerpo = {} if autorizacion.lower().startswith("bearer ") else await request.json()
+        if not isinstance(cuerpo, dict):
+            return {"error": 1}
+        evento = onlyoffice.evento_firmado(autorizacion, cuerpo)
+        if evento["status"] not in (2, 6):
+            return {"error": 0}
+        return await run_in_threadpool(_guardar_callback, db, ids, evento, request)
+    except (BadData, InvalidTokenError, ValueError, HTTPException, OSError, ErrorTransporte):
+        await run_in_threadpool(db.rollback)
+        return {"error": 1}
 
 
 @router.get("/archivos/{archivo_id}/vista.pdf")

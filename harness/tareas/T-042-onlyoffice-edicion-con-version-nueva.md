@@ -1,7 +1,7 @@
 ---
 id: T-042
 titulo: ONLYOFFICE edición con versión nueva
-estado: lista
+estado: en-curso
 rama: codex/T-042-onlyoffice-edicion-con-version-nueva
 creada: 2026-11-25
 depende: T-041
@@ -55,5 +55,10 @@ del archivo (con auditoría) y la vista previa y la búsqueda se actualizan sola
 - `forcesave` desde el agente y aviso dentro del editor (plan: "Agente y ONLYOFFICE a la vez"). Coedición con presencia. Historial de versiones dentro de ONLYOFFICE.
 
 ## Bitácora del ejecutor
+
+- Rama y PR dependen de T-041 (#60). Solo los usuarios con escritura reciben callback. El token de siete días identifica su empresa, archivo, versión base y usuario. La clave del documento enlaza el JWT de Docs con esa versión.
+- Se aceptan JWT en cuerpo y cabecera (incluido el envoltorio `payload` de Docs). Para los estados 2 y 6 la descarga exige el origen configurado, sin redirecciones ni proxy, y usa el mismo almacén y límite que una subida. Si Docs anuncia un origen HTTPS público, `ONLYOFFICE_URL_INTERNA` debe coincidir y ser accesible desde la app.
+- Después de descargar se comprueban otra vez los permisos y se bloquea el archivo. Los guardados de la misma sesión pueden continuar tras un estado 6. Un reintento mantiene el historial y una subida manual posterior invalida la edición anterior.
+- Versión, auditoría y jobs quedan en la misma transacción. La columna del autor se llama `subida_por`. El worker existente encola la indexación al obtener el PDF. Las pruebas usan un callback HTTP con descarga sustituida y una base PostgreSQL real.
 
 ## Dictamen del auditor

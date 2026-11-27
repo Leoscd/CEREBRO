@@ -41,6 +41,7 @@ IFC_MAX_MB = int(os.getenv("IFC_MAX_MB", "200"))
 ONLYOFFICE_URL = os.getenv("ONLYOFFICE_URL", "").strip().rstrip("/")
 ONLYOFFICE_JWT_SECRET = os.getenv("ONLYOFFICE_JWT_SECRET", "")
 APP_URL_INTERNA = os.getenv("APP_URL_INTERNA", "http://app:8000").strip().rstrip("/")
+ONLYOFFICE_URL_INTERNA = os.getenv("ONLYOFFICE_URL_INTERNA", "http://onlyoffice").strip().rstrip("/")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 EMBEDDINGS_PROVEEDOR = os.getenv("EMBEDDINGS_PROVEEDOR", "openai").strip().lower()

@@ -1,17 +1,22 @@
-"""Compara los archivos vendorizados de PDF.js con su tarball fijado en npm."""
+"""Compara cada biblioteca vendorizada con su distribución fijada."""
 
 import base64
 import hashlib
 import io
 import json
+import re
 import sys
 import tarfile
 import urllib.request
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
-DIRECTORIO_PDFJS = Path(__file__).resolve().parents[1] / "app/static/vendor/pdfjs"
+DIRECTORIO_VENDOR = Path(__file__).resolve().parents[1] / "app/static/vendor"
 MANIFIESTO = "ORIGEN.json"
+LICENCIA_WEB_IFC = {
+    "url": "https://raw.githubusercontent.com/ThatOpen/engine_web-ifc/d7225478eb552ecc052bbad2f4ecf3a835d535fd/LICENSE.md",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+}
 
 
 class _SinRedirecciones(urllib.request.HTTPRedirectHandler):
@@ -59,19 +64,33 @@ def verificar(directorio: Path) -> None:
     if not isinstance(mapa, dict) or not mapa or not all(isinstance(ruta, str) for ruta in mapa.values()):
         raise ValueError("ORIGEN.json debe declarar un mapa de archivos con rutas en el tarball.")
 
+    paquete = origen["paquete"]
+    version = origen["version"]
+    nombre_npm = r"[a-z0-9][a-z0-9._-]*"
+    if not re.fullmatch(rf"(?:@{nombre_npm}/)?{nombre_npm}", paquete) or not re.fullmatch(r"[0-9][0-9A-Za-z.+-]*", version):
+        raise ValueError("Paquete o versión de npm inválidos.")
+    url_esperada = f"https://registry.npmjs.org/{paquete}/-/{paquete.split('/')[-1]}-{version}.tgz"
+    if origen["url"] != url_esperada:
+        raise ValueError("ORIGEN.json debe apuntar al tarball exacto en registry.npmjs.org.")
+
+    declarados = set(mapa)
+    licencia_externa = (paquete, version) == ("web-ifc", "0.0.68")
+    if licencia_externa:
+        if origen.get("licencia_externa") != LICENCIA_WEB_IFC or "LICENSE" in mapa:
+            raise ValueError("Falta la procedencia fijada de LICENSE de web-ifc.")
+        declarados.add("LICENSE")
+    elif "licencia_externa" in origen:
+        raise ValueError("Licencia externa no autorizada para este paquete.")
     archivos = _archivos_locales(directorio)
-    sin_declarar = archivos.keys() - mapa.keys()
+    sin_declarar = archivos.keys() - declarados
     if sin_declarar:
         raise ValueError("Sin declarar en ORIGEN.json: " + ", ".join(sorted(sin_declarar)))
-    faltantes = mapa.keys() - archivos.keys()
+    faltantes = declarados - archivos.keys()
     if faltantes:
         raise ValueError("Faltan archivos declarados en ORIGEN.json: " + ", ".join(sorted(faltantes)))
 
-    paquete = origen["paquete"]
-    version = origen["version"]
-    url_esperada = f"https://registry.npmjs.org/{paquete}/-/{paquete}-{version}.tgz"
-    if paquete != "pdfjs-dist" or origen["url"] != url_esperada:
-        raise ValueError("ORIGEN.json debe apuntar al tarball de pdfjs-dist en registry.npmjs.org.")
+    if licencia_externa and hashlib.sha256(archivos["LICENSE"].read_bytes()).hexdigest() != LICENCIA_WEB_IFC["sha256"]:
+        raise ValueError("LICENSE de web-ifc difiere del SHA-256 oficial fijado.")
     tarball = descargar_tarball(url_esperada)
     firma = base64.b64encode(hashlib.sha512(tarball).digest()).decode("ascii")
     if f"sha512-{firma}" != origen["integrity"]:
@@ -88,11 +107,15 @@ def verificar(directorio: Path) -> None:
             raise ValueError(f"{nombre}: SHA-256 esperado de {ruta_npm}: {esperado}; se obtuvo {calculado}")
 
 
-def main(directorio: Path = DIRECTORIO_PDFJS) -> int:
+def main(directorio: Path | None = None) -> int:
     try:
-        verificar(directorio)
+        directorios = [directorio] if directorio is not None else sorted(p for p in DIRECTORIO_VENDOR.iterdir() if p.is_dir())
+        for local in directorios:
+            if local.is_symlink() or local.is_junction():
+                raise ValueError(f"Directorio de vendor inesperado: {local}")
+            verificar(local)
     except (OSError, EOFError, KeyError, TypeError, ValueError, tarfile.TarError) as error:
-        print(f"Integridad de PDF.js: {error}", file=sys.stderr)
+        print(f"Integridad de vendor: {error}", file=sys.stderr)
         return 1
     return 0
 

@@ -1,0 +1,14 @@
+{
+  "paquete": "web-ifc",
+  "version": "0.0.68",
+  "url": "https://registry.npmjs.org/web-ifc/-/web-ifc-0.0.68.tgz",
+  "integrity": "sha512-SqAmmwpultii8lQZoFvn2vnusW4tRVaed8GJNGuh8EenFMPe4x0g6NIXGu+5eBrXsiV+AaOdwjmOKTHEGXM4Gg==",
+  "archivos": {
+    "web-ifc-api-iife.js": "package/web-ifc-api-iife.js",
+    "web-ifc.wasm": "package/web-ifc.wasm"
+  },
+  "licencia_externa": {
+    "url": "https://raw.githubusercontent.com/ThatOpen/engine_web-ifc/d7225478eb552ecc052bbad2f4ecf3a835d535fd/LICENSE.md",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  }
+}

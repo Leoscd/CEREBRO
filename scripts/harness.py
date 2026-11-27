@@ -175,7 +175,9 @@ def rutas_tocar(texto: str) -> list[str]:
     if not bloque:
         return []
     # H-015: `dir/**` o `dir/*` vale como prefijo del directorio.
-    return [r.rstrip("*") for r in re.findall(r"`([^`]+)`", bloque.group(1)) if "/" in r or "." in r]
+    # H-016: también nombres sin "/" ni "." que existen en la raíz (`Caddyfile`, `Dockerfile`).
+    return [r.rstrip("*") for r in re.findall(r"`([^`]+)`", bloque.group(1))
+            if "/" in r or "." in r or (RAIZ / r).is_file()]
 
 
 def cmd_auditar(args) -> None:

@@ -1,7 +1,7 @@
 ---
 id: T-040
 titulo: Visor 3D e IFC en el navegador
-estado: en-revision
+estado: hecha
 rama: codex/T-040-visor-3d-e-ifc-en-el-navegador
 creada: 2026-11-25
 depende: — (etapa 1 en main)
@@ -61,3 +61,4 @@ del agente al lado como en el PDF.
 - Humo en Chrome con modelos generados localmente: cargaron los ocho formatos y se habilitó Encuadrar. El caso glTF con un `.bin` aparte mostró el mensaje solicitado. Se comprobó la petición local de WASM y cero peticiones a otros orígenes.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-26). Vendor verificado contra npm en los tres directorios (licencia de web-ifc fijada por SHA en el código); modelos servidos como attachment y solo pdf/imagen inline; sin CDN; aislamiento con prueba. Calidad: `importador.ifc = api` depende de un interno de o3dv 0.18.0 (fijado). Merge: #58.

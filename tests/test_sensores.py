@@ -123,3 +123,10 @@ def test_rutas_tocar_multilinea():
     texto = ("## Alcance\n- Tocar: `app/a.py`, `app/b.py` (solo `ficha`),\n  `tests/test_c.py`.\n"
              "- No tocar: `app/permisos.py`.\n")
     assert rutas_tocar(texto) == ["app/a.py", "app/b.py", "tests/test_c.py"]
+
+
+def test_rutas_tocar_con_comodin():
+    # H-015: `app/static/vendor/o3dv/**` cubre todo lo que cuelga del directorio.
+    from scripts.harness import rutas_tocar
+    texto = "- Tocar: `app/static/vendor/o3dv/**`, `docs/*`.\n- No tocar: `app/permisos.py`.\n"
+    assert rutas_tocar(texto) == ["app/static/vendor/o3dv/", "docs/"]

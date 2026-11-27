@@ -1,11 +1,11 @@
 ---
 id: T-041
 titulo: ONLYOFFICE solo lectura
-estado: en-curso
+estado: en-revision
 rama: codex/T-041-onlyoffice-solo-lectura
 creada: 2026-11-25
 depende: — (etapa 2 en main)
-pr:
+pr: #60
 ---
 
 ## Objetivo
@@ -43,12 +43,12 @@ de la ficha del archivo. Si no está configurado, se sigue viendo la vista PDF d
   no interpolada en JS). Si no hay `ONLYOFFICE_URL`, queda el visor PDF de T-037.
 
 ## Criterios de aceptación
-- [ ] CA1 `config_editor` decodifica con `ONLYOFFICE_JWT_SECRET` (PyJWT) y trae `mode="view"`, `edit=False` y la `url` de descarga con token.
-- [ ] CA2 `GET /onlyoffice/descarga/{token}` válido → 200 con los bytes de la versión; vencido (reloj adelantado), alterado o de un archivo en papelera → 404.
-- [ ] CA3 Aislamiento: un token firmado para la empresa A con el id de un archivo de B → 404; la página del archivo para un usuario sin acceso → 404.
-- [ ] CA4 Sin `ONLYOFFICE_URL` la página sigue mostrando la vista PDF de T-037 (prueba sobre el HTML).
-- [ ] CA5 `docker compose config` y `docker compose --profile onlyoffice config` válidos; la prueba de humo sigue en verde sin levantar ONLYOFFICE.
-- [ ] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] CA1 `config_editor` decodifica con `ONLYOFFICE_JWT_SECRET` (PyJWT) y trae `mode="view"`, `edit=False` y la `url` de descarga con token.
+- [x] CA2 `GET /onlyoffice/descarga/{token}` válido → 200 con los bytes de la versión; vencido (reloj adelantado), alterado o de un archivo en papelera → 404.
+- [x] CA3 Aislamiento: un token firmado para la empresa A con el id de un archivo de B → 404; la página del archivo para un usuario sin acceso → 404.
+- [x] CA4 Sin `ONLYOFFICE_URL` la página sigue mostrando la vista PDF de T-037 (prueba sobre el HTML).
+- [x] CA5 `docker compose config` y `docker compose --profile onlyoffice config` válidos; la prueba de humo sigue en verde sin levantar ONLYOFFICE.
+- [x] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
 
 ## Fuera de alcance
 - Edición y guardado (T-042). Coedición, comentarios y formularios PDF.

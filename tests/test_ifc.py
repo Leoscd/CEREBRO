@@ -1,3 +1,9 @@
+import json
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import pytest
 import ifcopenshell
 from ifcopenshell.api import aggregate, project, pset, root, spatial, unit
@@ -79,6 +85,8 @@ def test_resumen_ifc_con_unidades_citas_y_aislamiento(db, mundo, como, directori
     admin = como("admin@a.test")
     pagina = admin.get(ruta)
     assert "Planta baja" in pagina.text and "Atrio crisoprasio" in pagina.text
+    assert "<td>muros</td>" in pagina.text and "<td>puertas</td>" in pagina.text
+    assert "IfcWall" not in pagina.text
     assert ruta + "#page=1" in buscar(admin, mundo["p2"], "crisoprasio").text
     for email, proyecto in [("ana@a.test", "p1"), ("admin@b.test", "pb")]:
         otro = como(email)
@@ -86,6 +94,12 @@ def test_resumen_ifc_con_unidades_citas_y_aislamiento(db, mundo, como, directori
         usuario = mundo["ana" if proyecto == "p1" else "admin_b"]
         assert busqueda.buscar(db, usuario, mundo["p2"], "crisoprasio") == []
         assert "Atrio crisoprasio" not in buscar(otro, mundo[proyecto], "crisoprasio").text
+
+    # Un resumen generado por otra versión puede contener una clase aún sin traducir.
+    db.execute("""UPDATE versiones_archivo SET derivados=jsonb_set(derivados, '{meta,ifc,pisos,0,tipos,IfcOtro}',
+                  derivados #> '{meta,ifc,pisos,0,tipos,IfcWall}')""")
+    db.commit()
+    assert "<td>IfcOtro</td>" in admin.get(ruta).text
 
 
 def test_descarta_el_resumen_si_cambia_la_version_durante_la_lectura(db, mundo, como, directorio_almacen, monkeypatch):
@@ -122,3 +136,45 @@ def test_ifc_invalido_o_grande(db, mundo, como, directorio_almacen, monkeypatch,
     assert d.get("vista_ifc") == "error" and "ifc" not in d["meta"]
     assert "no está disponible" in como("admin@a.test").get(ruta).text
     assert db.execute("SELECT estado FROM jobs WHERE tipo='archivo.ifc'").fetchone()["estado"] == "hecho"
+
+
+@pytest.mark.skipif(not shutil.which("docker"), reason="Compose se verifica en CI")
+def test_configuracion_logs_onlyoffice(tmp_path):
+    shutil.copyfile("docker-compose.yml", tmp_path / "docker-compose.yml")
+    shutil.copyfile(".env.ci", tmp_path / ".env")
+    salida = subprocess.check_output(["docker", "compose", "--profile", "onlyoffice", "config", "--format", "json"],
+                                     cwd=tmp_path, text=True, timeout=30)
+    servicio = json.loads(salida)["services"]["onlyoffice"]
+    assert servicio["logging"] == {"driver": "json-file", "options": {"max-size": "10m", "max-file": "5"}}
+    assert "no-new-privileges:true" in servicio["security_opt"]
+
+
+@pytest.mark.parametrize(("dominio", "entorno", "perfiles"), [
+    (False, "", ""),
+    (True, 'ONLYOFFICE_URL=""', " --profile dominio"),
+    (False, "ONLYOFFICE_URL=https://docs.test", " --profile onlyoffice"),
+    (True, "ONLYOFFICE_URL='https://docs.test' # pruebas", " --profile dominio --profile onlyoffice"),
+])
+def test_perfiles_deploy(tmp_path, dominio, entorno, perfiles):
+    bash = shutil.which("bash")
+    if os.name == "nt" and (git := shutil.which("git")):
+        git_bash = Path(git).parent.parent / "bin/bash.exe"
+        if git_bash.is_file():
+            bash = str(git_bash)
+    if not bash:
+        pytest.skip("El despliegue requiere Bash")
+    (tmp_path / "scripts").mkdir()
+    shutil.copyfile("scripts/deploy.sh", tmp_path / "scripts/deploy.sh")
+    (tmp_path / ".env").write_text(f"SECRET_KEY=prueba\n{entorno}\n", encoding="utf-8")
+    (tmp_path / "Caddyfile").write_text("proyectos.test" if dominio else "proyectos.tudominio.com")
+    subprocess.run([bash, "-n", "scripts/deploy.sh"], cwd=tmp_path, check=True, timeout=20)
+    dobles = 'docker() { echo "$*" >> llamadas; }; curl() { return 0; }; chown() { return 0; };'
+    con_logs = dominio and "onlyoffice" in perfiles
+    orden = " source scripts/deploy.sh" + (" --logs" if con_logs else "")
+    proceso = subprocess.run([bash, "-c", dobles + orden], cwd=tmp_path, check=True,
+                             capture_output=True, text=True, timeout=20)
+    llamadas = (tmp_path / "llamadas").read_text().splitlines()
+    assert f"compose{perfiles} up -d" in llamadas
+    if con_logs:
+        assert f"compose{perfiles} logs -f" in llamadas
+    assert (perfiles.strip() or "sin perfiles opcionales") in proceso.stdout

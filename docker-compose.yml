@@ -14,6 +14,10 @@ services:
     image: onlyoffice/documentserver:10.0.0.1
     profiles: ["onlyoffice"]
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
     networks: [documentos]
     environment:
       JWT_ENABLED: "true"

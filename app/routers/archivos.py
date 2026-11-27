@@ -117,13 +117,21 @@ def _tipo_de_vista(blob: Path, mime: str, extension: str) -> str | None:
     }
     if extension in {"svg", "svgz", "html", "htm", "xhtml"}:
         return None
-    if mime not in firmas and mime != "image/webp":
+    es_modelo = extension in {"glb", "gltf", "obj", "stl", "ply", "3ds", "off", "ifc"}
+    if not es_modelo and mime not in firmas and mime != "image/webp":
         return None
     try:
         with blob.open("rb") as stream:
-            cabecera = stream.read(12)
+            cabecera = stream.read(84)
+            if extension == "stl":
+                triangulos = int.from_bytes(cabecera[80:84], "little")
+                binario = len(cabecera) == 84 and stream.seek(0, 2) == 84 + 50 * triangulos
+                return "modelo3d" if binario or cabecera.lstrip().startswith(b"solid") else None
     except FileNotFoundError:
         return None
+    if es_modelo:
+        firma = {"glb": b"glTF", "ifc": b"ISO-10303-21"}.get(extension, b"")
+        return "modelo3d" if cabecera and cabecera.startswith(firma) else None
     if mime == "image/webp":
         return "imagen" if cabecera.startswith(b"RIFF") and cabecera[8:12] == b"WEBP" else None
     if cabecera.startswith(firmas[mime]):
@@ -137,7 +145,7 @@ def _respuesta_archivo(archivo: dict, version: dict | None, *, previsualizar: bo
     blob = almacen.ruta(version["sha256"])
     if not blob.is_file():
         raise HTTPException(status_code=404, detail="Archivo no disponible")
-    inline = previsualizar and _tipo_de_vista(blob, version["mime"], archivo["extension"]) is not None
+    inline = previsualizar and _tipo_de_vista(blob, version["mime"], archivo["extension"]) in {"pdf", "imagen"}
     return FileResponse(
         blob, media_type=version["mime"], filename=archivo["nombre"],
         content_disposition_type="inline" if inline else "attachment",

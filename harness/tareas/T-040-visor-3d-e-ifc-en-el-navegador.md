@@ -1,7 +1,7 @@
 ---
 id: T-040
 titulo: Visor 3D e IFC en el navegador
-estado: lista
+estado: en-curso
 rama: codex/T-040-visor-3d-e-ifc-en-el-navegador
 creada: 2026-11-25
 depende: — (etapa 1 en main)
@@ -53,5 +53,11 @@ del agente al lado como en el PDF.
 - Modelos de varios archivos (glTF con `.bin` aparte, OBJ con `.mtl`). FBX y SKP. That Open y `.frag`. Medir o cortar en el visor.
 
 ## Bitácora del ejecutor
+
+- Rama desde `origin/codex/T-039-ifc-en-el-servidor` (`2af6373`), base pedida para el PR. El #55 quedó integrado con ese mismo commit.
+- `online-3d-viewer@0.18.0` (MIT): `o3dv.min.js` y `LICENSE` (nombre publicado: `LICENSE.md`). Three está incluido en el motor.
+- `web-ifc@0.0.68` (MPL-2.0): `web-ifc-api-iife.js` y `web-ifc.wasm` del tarball. La versión se lee en el importador distribuido por o3dv. El tarball omite la licencia. Leo autorizó incorporar únicamente `LICENSE.md` del commit oficial `d7225478eb552ecc052bbad2f4ecf3a835d535fd` como `LICENSE`. Su URL y SHA-256 constan en `ORIGEN.json`.
+- El importador IFC reutiliza la API inicializada con WASM local de un hilo. El visor conserva las cantidades por piso y la descarga del original. Para glTF se indican los recursos externos y la compresión Draco que requiere un decodificador adicional.
+- Humo en Chrome con modelos generados localmente: cargaron los ocho formatos y se habilitó Encuadrar. El caso glTF con un `.bin` aparte mostró el mensaje solicitado. Se comprobó la petición local de WASM y cero peticiones a otros orígenes.
 
 ## Dictamen del auditor

@@ -59,6 +59,8 @@ a:hover { text-decoration: underline; }
 .herramientas-visor input[type="number"] { width: 4.5rem; }
 .superficie-visor { min-height: 22rem; background: rgba(130, 140, 155, .12); border-radius: .4rem; }
 .superficie-pdf { max-height: 72vh; overflow: auto; padding: .75rem; }
+.superficie-modelo { height: min(68vh, 42rem); overflow: hidden; }
+.superficie-modelo canvas { display: block; touch-action: none; }
 .superficie-pdf canvas { display: block; margin: 0 auto; background: white; }
 .superficie-imagen { height: min(72vh, 44rem); overflow: hidden; }
 .superficie-imagen img { width: 100%; height: 100%; object-fit: contain; user-select: none; }

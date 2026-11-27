@@ -33,7 +33,17 @@
         <li>{{ capa.nombre }}{% if not capa.encendida %} · apagada{% endif %}{% if capa.congelada %} · congelada{% endif %}</li>
       {% endfor %}</ul>
       {% endif %}
-    {% elif version and version.derivados.get('meta', {}).get('ifc') %}
+    {% elif tipo == 'modelo3d' %}
+      <div id="visor-modelo3d" data-contenido="/archivos/{{ archivo.id }}/contenido" data-nombre="{{ archivo.nombre }}">
+        <div class="herramientas-visor">
+          <button type="button" class="btn ghost small" id="encuadrar-modelo" disabled>Encuadrar</button>
+          <span class="muted">Arrastrá para orbitar. Usá la rueda o dos dedos para acercar.</span>
+        </div>
+        <p id="estado-modelo" role="status">Cargando el modelo…</p>
+        <div class="superficie-visor superficie-modelo"><canvas aria-label="Vista 3D del modelo"></canvas></div>
+      </div>
+    {% endif %}
+    {% if version and version.derivados.get('meta', {}).get('ifc') %}
       {% set modelo = version.derivados.meta.ifc %}
       <h2>{{ modelo.proyecto }}</h2>
       <p>{{ modelo.esquema }}{% if modelo.edificios %} · {{ modelo.edificios|join(', ') }}{% endif %}</p>
@@ -53,7 +63,7 @@
         </tbody>
       </table>
       <a class="btn" href="/archivos/{{ archivo.id }}/descargar">Descargar IFC</a>
-    {% else %}
+    {% elif not tipo %}
       {% if version and (version.derivados.vista == 'pendiente' or version.derivados.vista_ifc == 'pendiente') %}
       <p class="muted">Preparando la vista previa…</p>
       {% elif version and (version.derivados.vista in ('error', 'sin_conversor') or version.derivados.vista_ifc == 'error') %}
@@ -89,6 +99,12 @@
 </div>
 {% endblock %}
 {% block scripts %}
+{% if tipo == 'modelo3d' %}
+<script src="/static/vendor/o3dv/o3dv.min.js?v={{ static_version }}"></script>
+{% if archivo.extension == 'ifc' %}
+<script src="/static/vendor/web-ifc/web-ifc-api-iife.js?v={{ static_version }}"></script>
+{% endif %}
+{% endif %}
 <script type="module" src="/static/archivo.js?v={{ static_version }}"></script>
 <script type="module" src="/static/agente.js?v={{ static_version }}"></script>
 {% endblock %}

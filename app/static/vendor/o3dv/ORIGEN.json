@@ -1,0 +1,10 @@
+{
+  "paquete": "online-3d-viewer",
+  "version": "0.18.0",
+  "url": "https://registry.npmjs.org/online-3d-viewer/-/online-3d-viewer-0.18.0.tgz",
+  "integrity": "sha512-y7ZlV/zkakNUyjqcXz6XecA7vXgLEUnaAey9tyx8o6/wcdV64RfjXAQOjGXGY2JOZoDi4Cg1ic9icSWMWAvRQA==",
+  "archivos": {
+    "o3dv.min.js": "package/build/engine/o3dv.min.js",
+    "LICENSE": "package/LICENSE.md"
+  }
+}

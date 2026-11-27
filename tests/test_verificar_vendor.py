@@ -72,3 +72,36 @@ def test_vendor_detecta_integrity_distinto(vendor):
 def test_vendor_rechaza_ruta_insegura_aunque_no_este_en_el_mapa(vendor, ruta):
     with pytest.raises(ValueError, match="Ruta insegura"):
         verificar_vendor.verificar(vendor(miembro_extra=ruta))
+
+
+def test_vendor_rechaza_otro_host(vendor):
+    directorio = vendor()
+    ruta = directorio / "ORIGEN.json"
+    ruta.write_text(ruta.read_text().replace("registry.npmjs.org", "example.org"))
+    with pytest.raises(ValueError, match="registry.npmjs.org"):
+        verificar_vendor.verificar(directorio)
+
+
+def test_vendor_detecta_un_byte_de_o3dv(vendor):
+    directorio = vendor()
+    ruta = directorio / "ORIGEN.json"
+    origen = json.loads(ruta.read_text().replace("pdfjs-dist", "online-3d-viewer"))
+    origen["archivos"] = {"o3dv.min.js": origen["archivos"].pop("pdf.mjs")}
+    ruta.write_text(json.dumps(origen))
+    motor = directorio / "o3dv.min.js"
+    (directorio / "pdf.mjs").rename(motor)
+    verificar_vendor.verificar(directorio)
+    motor.write_bytes(b"Original\n")
+    with pytest.raises(ValueError, match=r"o3dv.min.js: SHA-256"):
+        verificar_vendor.verificar(directorio)
+
+
+def test_vendor_rechaza_licencia_ifc_alterada(tmp_path):
+    publicado = verificar_vendor.DIRECTORIO_VENDOR / "web-ifc"
+    manifiesto = json.loads((publicado / "ORIGEN.json").read_text())
+    (tmp_path / "ORIGEN.json").write_text(json.dumps(manifiesto))
+    for nombre in manifiesto["archivos"]:
+        (tmp_path / nombre).touch()
+    (tmp_path / "LICENSE").write_bytes(b"distinta")
+    with pytest.raises(ValueError, match="LICENSE de web-ifc difiere"):
+        verificar_vendor.verificar(tmp_path)

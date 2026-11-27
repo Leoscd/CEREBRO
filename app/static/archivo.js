@@ -188,3 +188,83 @@ const pdf = document.querySelector("#visor-pdf");
 if (pdf) iniciarPdf(pdf);
 const imagen = document.querySelector("#visor-imagen");
 if (imagen) iniciarImagen(imagen);
+
+// El primer bloque de un GLB 2 es su único documento JSON.
+async function leerGltf(archivo, extension) {
+    if (extension === "gltf") return JSON.parse(await archivo.text());
+    const cabecera = new DataView(await archivo.slice(0, 20).arrayBuffer());
+    const longitud = cabecera.getUint32(12, true);
+    if (cabecera.getUint32(4, true) !== 2 || cabecera.getUint32(8, true) !== archivo.size ||
+        cabecera.getUint32(16, true) !== 0x4e4f534a || 20 + longitud > archivo.size) {
+        throw new Error("GLB inválido");
+    }
+    for (let pos = 20 + longitud; pos < archivo.size;) {
+        const bloque = new DataView(await archivo.slice(pos, pos + 8).arrayBuffer());
+        pos += 8 + bloque.getUint32(0, true);
+        if (bloque.getUint32(4, true) === 0x4e4f534a || pos > archivo.size) throw new Error("GLB inválido");
+    }
+    return JSON.parse(await archivo.slice(20, 20 + longitud).text());
+}
+
+async function iniciarModelo3d(contenedor) {
+    const estado = contenedor.querySelector("#estado-modelo");
+    const encuadrar = contenedor.querySelector("#encuadrar-modelo");
+    const superficie = contenedor.querySelector(".superficie-modelo");
+    const fallo = () => { estado.textContent = "No se pudo mostrar el modelo. Podés descargar el original."; };
+    try {
+        const respuesta = await fetch(contenedor.dataset.contenido, {credentials: "same-origin"});
+        if (!respuesta.ok) throw new Error("Contenido no disponible");
+        const archivo = new File([await respuesta.blob()], contenedor.dataset.nombre);
+        const extension = archivo.name.split(".").pop().toLowerCase();
+        if (extension === "gltf" || extension === "glb") {
+            const gltf = await leerGltf(archivo, extension);
+            const recursos = [...(gltf.buffers || []), ...(gltf.images || [])];
+            if (recursos.some(({uri}) => uri !== undefined && !uri.startsWith("data:"))) {
+                estado.textContent = "Subí el modelo como GLB o glTF embebido";
+                return;
+            }
+            if (gltf.extensionsRequired?.includes("KHR_draco_mesh_compression")) {
+                estado.textContent = "Exportá el modelo sin compresión Draco.";
+                return;
+            }
+        }
+        const cargador = new OV.ThreeModelLoader();
+        if (extension === "ifc") {
+            const api = new WebIFC.IfcAPI();
+            api.SetWasmPath("/static/vendor/web-ifc/", true);
+            await api.Init(undefined, true);
+            // El importador de o3dv 0.18.0 reutiliza una API ya inicializada.
+            const importador = cargador.GetImporter().importers.find(i => i.CanImportExtension("ifc"));
+            importador.ifc = api;
+        }
+        const visor = new OV.Viewer();
+        visor.Init(superficie.querySelector("canvas"));
+        const ajustar = () => visor.Resize(superficie.clientWidth, superficie.clientHeight);
+        ajustar();
+        new ResizeObserver(ajustar).observe(superficie);
+        cargador.LoadModel(OV.InputFilesFromFileObjects([archivo]), new OV.ImportSettings(), {
+            onLoadStart() {},
+            onFileListProgress() {},
+            onFileLoadProgress() {},
+            onImportStart() { estado.textContent = "Leyendo la geometría…"; },
+            onVisualizationStart() { estado.textContent = "Dibujando el modelo…"; },
+            onTextureLoaded() { visor.Render(); },
+            onLoadError: fallo,
+            onModelFinished(resultado, objeto) {
+                visor.SetMainObject(objeto);
+                const esfera = visor.GetBoundingSphere(() => true);
+                visor.AdjustClippingPlanesToSphere(esfera);
+                visor.SetUpVector(OV.Direction.Y, false);
+                visor.FitSphereToWindow(esfera, false);
+                encuadrar.addEventListener("click", () => visor.FitSphereToWindow(esfera, true));
+                encuadrar.disabled = false;
+                estado.hidden = true;
+            },
+        });
+    } catch {
+        fallo();
+    }
+}
+
+const modelo = document.querySelector("#visor-modelo3d");
+if (modelo) iniciarModelo3d(modelo);

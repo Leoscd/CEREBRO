@@ -1,7 +1,7 @@
 ---
 id: T-041
 titulo: ONLYOFFICE solo lectura
-estado: lista
+estado: en-curso
 rama: codex/T-041-onlyoffice-solo-lectura
 creada: 2026-11-25
 depende: — (etapa 2 en main)
@@ -54,5 +54,10 @@ de la ficha del archivo. Si no está configurado, se sigue viendo la vista PDF d
 - Edición y guardado (T-042). Coedición, comentarios y formularios PDF.
 
 ## Bitácora del ejecutor
+
+- La ficha sirve ONLYOFFICE para DOCX, XLSX y PPTX cuando están configurados URL y secreto. Las demás configuraciones conservan la vista previa existente.
+- PyJWT 2.15.1 ya estaba instalado. Imagen oficial sin modificar `onlyoffice/documentserver:10.0.0.1`, tag verificado en Docker Hub. El perfil dispone de 6 GiB, volúmenes de datos y logs y una red interna compartida con la app y Caddy para intercambiar documentos.
+- La URL firmada identifica la versión exacta y caduca a los 10 minutos. La descarga vuelve a comprobar empresa, archivo y papelera. El JWT cubre toda la configuración entregada al editor.
+- Las pruebas cubren los tres formatos, el PDF alternativo y las restricciones de descarga. La CLI de Docker no está instalada en esta PC. El CI verifica ambas configuraciones de Compose y ejecuta el humo del perfil normal. El editor gráfico requiere un Document Server configurado.
 
 ## Dictamen del auditor

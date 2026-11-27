@@ -10,6 +10,20 @@ x-endurecido: &endurecido
     options: { max-size: "10m", max-file: "5" }
 
 services:
+  onlyoffice:
+    image: onlyoffice/documentserver:10.0.0.1
+    profiles: ["onlyoffice"]
+    restart: unless-stopped
+    networks: [documentos]
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:-}
+      ALLOW_PRIVATE_IP_ADDRESS: "true"
+    volumes:
+      - onlyoffice_datos:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+    mem_limit: 6g
+
   gotenberg:
     <<: *endurecido
     image: gotenberg/gotenberg:8.32.0
@@ -55,7 +69,7 @@ services:
     image: &imagen_gsp ${COMPOSE_PROJECT_NAME:-gsp}-app:local
     pull_policy: never
     env_file: .env
-    networks: [default, conversion]
+    networks: [default, conversion, documentos]
     environment: &entorno_gsp
       DATABASE_URL: postgresql://gsp:${POSTGRES_PASSWORD}@postgres:5432/gsp
       GOTENBERG_URL: http://gotenberg:3000
@@ -97,6 +111,7 @@ services:
 
   caddy:
     <<: *endurecido
+    networks: [default, documentos]
     image: caddy:2-alpine
     profiles: ["dominio"]
     cap_add: ["NET_BIND_SERVICE"]
@@ -111,9 +126,13 @@ services:
     mem_limit: 256m
 
 networks:
+  documentos:
+    internal: true
   conversion:
     internal: true
 
 volumes:
+  onlyoffice_datos:
+  onlyoffice_logs:
   caddy_data:
   caddy_config:

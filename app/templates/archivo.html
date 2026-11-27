@@ -5,7 +5,10 @@
 <h1 class="titulo-archivo">{{ archivo.nombre }}</h1>
 <div class="vista-archivo" id="vista-archivo">
   <section class="card vista-archivo-visor" aria-label="Visor de archivo">
-    {% if tipo == 'pdf' %}
+    {% if tipo == 'onlyoffice' %}
+      <div id="visor-onlyoffice"></div>
+      <script type="application/json" id="config-onlyoffice">{{ editor | tojson }}</script>
+    {% elif tipo == 'pdf' %}
       <div id="visor-pdf" data-contenido="/archivos/{{ archivo.id }}/{{ 'vista.pdf' if version.derivados.pdf else 'contenido' }}" data-biblioteca="/static/vendor/pdfjs/pdf.mjs">
         <div class="herramientas-visor">
           <button type="button" class="btn ghost small" id="pagina-anterior" disabled>Anterior</button>
@@ -99,6 +102,9 @@
 </div>
 {% endblock %}
 {% block scripts %}
+{% if tipo == 'onlyoffice' %}
+<script src="{{ onlyoffice_url }}/web-apps/apps/api/documents/api.js"></script>
+{% endif %}
 {% if tipo == 'modelo3d' %}
 <script src="/static/vendor/o3dv/o3dv.min.js?v={{ static_version }}"></script>
 {% if archivo.extension == 'ifc' %}

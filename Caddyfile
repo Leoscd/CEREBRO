@@ -21,3 +21,7 @@ proyectos.tudominio.com {
         header_up -Tailscale-User-Name
     }
 }
+
+docs.tudominio.com {
+    reverse_proxy onlyoffice:80
+}

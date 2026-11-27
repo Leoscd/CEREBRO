@@ -5,8 +5,10 @@ from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
+from itsdangerous import BadData
 from psycopg import Connection
 
+from app import config
 from app.db import db_dependency
 from app.permisos import (
     archivos_visibles_sql,
@@ -17,7 +19,7 @@ from app.permisos import (
     puede_escribir_en_proyecto,
 )
 from app.security import check_csrf, require_user
-from app.services import almacen, auditoria, gotenberg, jobs, texto
+from app.services import almacen, auditoria, gotenberg, jobs, onlyoffice, texto
 from app.templates import templates
 
 router = APIRouter()
@@ -168,13 +170,18 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
         (user["empresa_id"], archivo_id),
     ).fetchall()
     tipo = _tipo_de_vista(almacen.ruta(version["sha256"]), version["mime"], archivo["extension"]) if version else None
-    if version and version["derivados"].get("pdf"):
+    editor = None
+    if version and archivo["extension"] in onlyoffice.TIPOS and config.ONLYOFFICE_URL and config.ONLYOFFICE_JWT_SECRET:
+        tipo = "onlyoffice"
+        editor = onlyoffice.config_editor(user, archivo, version)
+    elif version and version["derivados"].get("pdf"):
         tipo = "pdf"
     elif version and version["derivados"].get("svg"):
         tipo = "imagen"
     return templates.TemplateResponse(
         request, "archivo.html",
-        {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial, "tipo": tipo},
+        {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial,
+         "tipo": tipo, "editor": editor, "onlyoffice_url": config.ONLYOFFICE_URL},
     )
 
 
@@ -182,6 +189,23 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
 def contenido_archivo(archivo_id: int, user=Depends(require_user), db: Connection = Depends(db_dependency)):
     archivo = obtener_archivo(db, user, archivo_id)
     return _respuesta_archivo(archivo, _obtener_version(db, archivo), previsualizar=True)
+
+
+@router.get("/onlyoffice/descarga/{token}")
+def descarga_onlyoffice(token: str, db: Connection = Depends(db_dependency)):
+    try:
+        empresa_id, archivo_id, version_id = onlyoffice.leer_token_descarga(token)
+    except BadData:
+        raise HTTPException(404, "Versión no encontrada")
+    version = db.execute(
+        """SELECT a.nombre, v.mime, v.sha256 FROM versiones_archivo v
+           JOIN archivos a ON a.id=v.archivo_id AND a.empresa_id=v.empresa_id
+           WHERE v.empresa_id=%s AND v.archivo_id=%s AND v.id=%s AND a.en_papelera_en IS NULL""",
+        (empresa_id, archivo_id, version_id),
+    ).fetchone()
+    if version is None:
+        raise HTTPException(404, "Versión no encontrada")
+    return _respuesta_archivo(version, version)
 
 
 @router.get("/archivos/{archivo_id}/vista.pdf")

@@ -185,6 +185,14 @@ function iniciarImagen(visor) {
 }
 
 const pdf = document.querySelector("#visor-pdf");
+const configOffice = document.querySelector("#config-onlyoffice");
+if (configOffice) {
+    try {
+        new window.DocsAPI.DocEditor("visor-onlyoffice", JSON.parse(configOffice.textContent));
+    } catch {
+        document.querySelector("#visor-onlyoffice").textContent = "No se pudo abrir ONLYOFFICE. Podés descargar el archivo.";
+    }
+}
 if (pdf) iniciarPdf(pdf);
 const imagen = document.querySelector("#visor-imagen");
 if (imagen) iniciarImagen(imagen);

@@ -1,7 +1,7 @@
 ---
 id: T-044
 titulo: Ajustes de despliegue y ficha IFC
-estado: lista
+estado: en-curso
 rama: codex/T-044-ajustes-de-despliegue-y-ficha-ifc
 creada: 2026-11-27
 depende: T-043
@@ -41,5 +41,10 @@ el contenedor de ONLYOFFICE no llena el disco con logs, y la tabla del IFC habla
 - Mensaje dentro del editor de ONLYOFFICE cuando un guardado se rechaza.
 
 ## Bitácora del ejecutor
+
+- Rama desde el commit verde de T-043 (#66). La tabla consulta los plurales de `ifc.TIPOS` y conserva la clase original cuando falta una traducción.
+- `deploy.sh` arma los perfiles de dominio y ONLYOFFICE de forma independiente. Lee la última asignación de `ONLYOFFICE_URL` sin ejecutar el archivo de entorno. Los perfiles se imprimen al arrancar y se aplican también a `--logs`.
+- Prueba de Bash con un directorio temporal, cuatro combinaciones de perfiles y dobles de Docker y curl. También se verifica la sintaxis y que el script termine con éxito en el uso normal.
+- El perfil de ONLYOFFICE rota los logs de Docker (cinco archivos de 10 MB) y usa `no-new-privileges:true`. La prueba de Compose en Linux comprueba la configuración efectiva. El arranque real de Document Server con esa opción queda para el recorrido del VPS.
 
 ## Dictamen del auditor

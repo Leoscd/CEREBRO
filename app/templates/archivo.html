@@ -57,7 +57,7 @@
         <tbody>
         {% for piso in modelo.pisos %}
           {% for tipo_ifc, grupo in piso.tipos.items() %}
-          <tr><th scope="row">{{ piso.nombre }}{% if piso.elevacion_m is not none %} ({{ piso.elevacion_m|cantidad }} m){% endif %}</th><td>{{ tipo_ifc }}</td><td>{{ grupo.cantidad }}</td>
+          <tr><th scope="row">{{ piso.nombre }}{% if piso.elevacion_m is not none %} ({{ piso.elevacion_m|cantidad }} m){% endif %}</th><td>{{ nombres_ifc.get(tipo_ifc, tipo_ifc) }}</td><td>{{ grupo.cantidad }}</td>
             {% for valor in (grupo.area_m2, grupo.volumen_m3, grupo.longitud_m) %}
             <td>{{ valor|cantidad if valor is not none else '—' }}</td>
             {% endfor %}<td>{{ grupo.sin_cantidades }}</td></tr>

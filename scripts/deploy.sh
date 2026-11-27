@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Levanta o actualiza el gestor en el VPS.
-#   ./scripts/deploy.sh            construye y levanta (con Caddy si el Caddyfile ya tiene dominio)
+#   ./scripts/deploy.sh            construye y levanta con los perfiles configurados
 #   ./scripts/deploy.sh --logs     además muestra los logs
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -12,13 +12,22 @@ mkdir -p data/postgres data/archivos data/correos data/backups
 # La app corre como uid 10001 con el sistema de archivos de solo lectura: estas carpetas son su lugar de escritura.
 chown -R 10001:10001 data/archivos data/correos 2>/dev/null || true
 
-PERFIL=""
-if ! grep -q "proyectos.tudominio.com" Caddyfile; then PERFIL="--profile dominio"; fi
+PERFIL=()
+if ! grep -Fq "proyectos.tudominio.com" Caddyfile; then PERFIL+=(--profile dominio); fi
+# Leer la última asignación sin ejecutar el contenido de .env.
+if awk '/^[[:space:]]*(export[[:space:]]+)?ONLYOFFICE_URL[[:space:]]*=/ {
+    sub(/^[^=]*=/, "")
+    sub(/[[:space:]]+#.*$/, "")
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+    activa = ($0 != "" && $0 !~ /^("[[:space:]]*"|\047[[:space:]]*\047)$/)
+} END { exit !activa }' .env; then
+    PERFIL+=(--profile onlyoffice)
+fi
 
 echo "==> Construyendo"
 docker compose build
-echo "==> Levantando"
-docker compose $PERFIL up -d
+echo "==> Levantando: ${PERFIL[*]:-sin perfiles opcionales}"
+docker compose "${PERFIL[@]}" up -d
 
 echo "==> Esperando a que la app responda"
 for i in $(seq 1 40); do
@@ -35,4 +44,4 @@ Si es la primera vez:
 y programá el backup diario:
   crontab -e   ->   30 3 * * * /opt/gestor/scripts/backup.sh >> /var/log/gestor-backup.log 2>&1
 TXT
-[ "${1:-}" = "--logs" ] && docker compose logs -f
+if [ "${1:-}" = "--logs" ]; then docker compose "${PERFIL[@]}" logs -f; fi

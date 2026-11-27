@@ -185,10 +185,14 @@ def pagina_archivo(archivo_id: int, request: Request, user=Depends(require_user)
         tipo = "pdf"
     elif version and version["derivados"].get("svg"):
         tipo = "imagen"
+    nombres_ifc = {}
+    if version and version["derivados"].get("meta", {}).get("ifc"):
+        from app.services.ifc import TIPOS
+        nombres_ifc = {clase: plural for clase, (_, plural) in TIPOS.items()}
     return templates.TemplateResponse(
         request, "archivo.html",
         {"user": user, "archivo": archivo, "carpeta": carpeta, "version": version, "historial": historial,
-         "tipo": tipo, "editor": editor, "onlyoffice_url": config.ONLYOFFICE_URL},
+         "tipo": tipo, "editor": editor, "onlyoffice_url": config.ONLYOFFICE_URL, "nombres_ifc": nombres_ifc},
     )
 
 

@@ -27,9 +27,9 @@ Tiempo estimado: 2 a 3 horas. Costo de OpenAI: centavos de dólar (unas pocas co
    - `ONLYOFFICE_URL=https://docs.<dominio>` y `ONLYOFFICE_JWT_SECRET` (32 bytes o más, aleatorio). Dejá `ONLYOFFICE_URL_INTERNA=http://onlyoffice` por ahora (ver paso 4.6).
    - SMTP real si querés probar las invitaciones por correo.
 2. `Caddyfile`: reemplazá `proyectos.tudominio.com` y `docs.tudominio.com` por tus subdominios.
-3. Levantar. `./scripts/deploy.sh` **no** levanta ONLYOFFICE, así que después corré:
+3. Levantá el gestor. Con `ONLYOFFICE_URL` configurada en `.env`, el script incluye el perfil `onlyoffice` y muestra los perfiles elegidos.
    ```bash
-   docker compose --profile dominio --profile onlyoffice up -d
+   ./scripts/deploy.sh
    docker compose ps          # todos "running"/"healthy"; onlyoffice tarda 1-2 minutos la primera vez
    ```
 4. Si es la primera vez, creá dos empresas de prueba (la segunda es para el aislamiento):

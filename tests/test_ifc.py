@@ -89,15 +89,15 @@ def test_resumen_ifc_con_unidades_citas_y_aislamiento(db, mundo, como, directori
 
 
 def test_descarta_el_resumen_si_cambia_la_version_durante_la_lectura(db, mundo, como, directorio_almacen, monkeypatch):
-    from app.services import ifc
+    from app.services import proceso_aislado
 
     original = _modelo()
     ruta = _subir_ifc(db, mundo, como, original)
-    leer = ifc.resumen
+    ejecutar = proceso_aislado.ejecutar
 
-    def reemplazar_durante_la_lectura(blob):
-        datos = leer(blob)
-        monkeypatch.setattr(ifc, "resumen", leer)
+    def reemplazar_durante_la_lectura(*args, **kwargs):
+        datos = ejecutar(*args, **kwargs)
+        monkeypatch.setattr(proceso_aislado, "ejecutar", ejecutar)
         respuesta = como("admin@a.test").post(
             ruta + "/versiones", data={"csrf": csrf_de(mundo["admin_a"])},
             files={"archivo": ("Modelo.ifc", original.replace(b"crisoprasio", b"amatista"), "application/octet-stream")},
@@ -105,7 +105,7 @@ def test_descarta_el_resumen_si_cambia_la_version_durante_la_lectura(db, mundo, 
         assert respuesta.status_code == 303
         return datos
 
-    monkeypatch.setattr(ifc, "resumen", reemplazar_durante_la_lectura)
+    monkeypatch.setattr(proceso_aislado, "ejecutar", reemplazar_durante_la_lectura)
     procesar_pendientes(db)
     vieja, nueva = db.execute("SELECT id,derivados FROM versiones_archivo ORDER BY numero").fetchall()
     assert "ifc" not in vieja["derivados"]["meta"]

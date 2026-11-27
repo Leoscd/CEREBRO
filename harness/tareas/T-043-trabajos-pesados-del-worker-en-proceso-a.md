@@ -1,7 +1,7 @@
 ---
 id: T-043
 titulo: Trabajos pesados del worker en proceso aparte
-estado: lista
+estado: en-curso
 rama: codex/T-043-trabajos-pesados-del-worker-en-proceso-a
 creada: 2026-11-27
 depende: —
@@ -46,5 +46,10 @@ para siempre: el trabajo se corta, la ficha muestra "no disponible" y el worker 
 - Aislar Gotenberg (ya es otro contenedor) o los jobs de embeddings.
 
 ## Bitácora del ejecutor
+
+- DXF e IFC se leen con `spawn`. El hijo escribe el resultado en un archivo temporal privado para que un SVG grande no bloquee la espera del padre. El padre aplica el plazo, recoge el proceso y conserva las escrituras en la transacción del job.
+- Linux limita el espacio virtual con `RLIMIT_AS`; Windows conserva el plazo. Los valores por defecto son 300 segundos y 2048 MiB. El servicio worker dispone de 3 GiB en Compose.
+- El worker registra la categoría del fallo y completa el job en el primer intento. Conserva la comprobación de versión vigente antes de publicar chunks o derivados.
+- Leo autorizó dos ajustes de alcance: mostrar el error del resumen junto al visor de un IFC válido y conservar la prueba de cambio concurrente de versión moviendo su punto de intercepción al ejecutor. El CI Linux comprueba el límite de memoria.
 
 ## Dictamen del auditor

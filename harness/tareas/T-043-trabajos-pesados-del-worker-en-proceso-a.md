@@ -1,11 +1,11 @@
 ---
 id: T-043
 titulo: Trabajos pesados del worker en proceso aparte
-estado: en-curso
+estado: en-revision
 rama: codex/T-043-trabajos-pesados-del-worker-en-proceso-a
 creada: 2026-11-27
 depende: —
-pr:
+pr: #66
 ---
 
 ## Objetivo
@@ -36,11 +36,11 @@ para siempre: el trabajo se corta, la ficha muestra "no disponible" y el worker 
   Logueá el motivo (tiempo, memoria, caída) sin el contenido del archivo.
 
 ## Criterios de aceptación
-- [ ] CA1 Con `TRABAJO_PESADO_SEGUNDOS=1` y una función de prueba que duerme 5 s → `TrabajoAbortado` en menos de 3 s y el hijo no queda vivo.
-- [ ] CA2 Una función de prueba que termina con `os._exit(137)` → `TrabajoAbortado`; una que levanta `ValueError("x")` → `ErrorDelTrabajo("x")`.
-- [ ] CA3 Un DXF y un IFC de prueba (los de `tests/test_dxf.py` y `tests/test_ifc.py`) siguen procesándose igual por el proceso hijo.
-- [ ] CA4 Con `procesar_ifc` forzado a abortar (monkeypatch del ejecutor) → `vista_ifc="error"`, trabajo `hecho` y la ficha dice "no disponible".
-- [ ] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] CA1 Con `TRABAJO_PESADO_SEGUNDOS=1` y una función de prueba que duerme 5 s → `TrabajoAbortado` en menos de 3 s y el hijo no queda vivo.
+- [x] CA2 Una función de prueba que termina con `os._exit(137)` → `TrabajoAbortado`; una que levanta `ValueError("x")` → `ErrorDelTrabajo("x")`.
+- [x] CA3 Un DXF y un IFC de prueba (los de `tests/test_dxf.py` y `tests/test_ifc.py`) siguen procesándose igual por el proceso hijo.
+- [x] CA4 Con `procesar_ifc` forzado a abortar (monkeypatch del ejecutor) → `vista_ifc="error"`, trabajo `hecho` y la ficha dice "no disponible".
+- [x] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
 
 ## Fuera de alcance
 - Aislar Gotenberg (ya es otro contenedor) o los jobs de embeddings.

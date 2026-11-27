@@ -15,7 +15,7 @@ Lo lee la barra de avance (mod `avance-gsp`) para calcular el porcentaje del pro
 | M2 | Presupuestos y precios | 3.5 | en-curso |
 | M3 | Seguimiento de obra | 2.5 | en-curso |
 | M4 | Conector y sesiones de trabajo | 3.5 | pendiente |
-| M5 | Redes y Gerencia | 2.0 | pendiente |
+| M5 | Redes y Gerencia | 2.0 | en-curso |
 
 ## Notas de cierre
 - **M1 (2026-11-23):** 14 tareas aprobadas (L-001, L-002). Recorrido en el navegador con datos demo: subida, visor en `#page=2`,

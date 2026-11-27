@@ -2,8 +2,8 @@
 id: L-005
 titulo: M1 — visores pendientes (Office, DXF, IFC, 3D, ONLYOFFICE)
 hito: M1
-estado: abierto
-etapa_activa: 3        # etapa 1 (T-037 a T-039, PRs #53-#55) y etapa 2 (T-040, #58) mergeadas el 2026-11-26
+estado: cerrado
+etapa_activa: 3        # etapas 1 (#53-#55) y 2 (#58) el 2026-11-26; etapa 3 (#60, #62) el 2026-11-27
 ---
 
 # Lote L-005 · visores pendientes de M1 (H-012)

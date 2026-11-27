@@ -1,7 +1,7 @@
 ---
 id: T-042
 titulo: ONLYOFFICE edición con versión nueva
-estado: en-revision
+estado: hecha
 rama: codex/T-042-onlyoffice-edicion-con-version-nueva
 creada: 2026-11-25
 depende: T-041
@@ -64,3 +64,4 @@ del archivo (con auditoría) y la vista previa y la búsqueda se actualizan sola
 - Humo HTTP local: se comprobó el SHA-256 de la descarga, el rechazo de redirecciones y el límite de tamaño. Suite local aprobada.
 
 ## Dictamen del auditor
+DICTAMEN: APROBAR (Claude, 2026-11-27). Callback con doble firma (token de URL + JWT de Docs, datos solo del JWT); clave atada a la versión base; descarga solo desde ONLYOFFICE_URL_INTERNA, sin redirecciones ni proxy y con el tope de ARCHIVO_MAX_MB; permisos revalidados con bloqueo tras descargar; versión, auditoría y jobs en una transacción; reintentos sin duplicar. Calidad: si hubo una subida manual durante la edición, Docs recibe error y el editor no avisa por qué. Sin probar contra un Document Server real. Merge: #62.

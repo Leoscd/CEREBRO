@@ -1,11 +1,11 @@
 ---
 id: T-042
 titulo: ONLYOFFICE edición con versión nueva
-estado: en-curso
+estado: en-revision
 rama: codex/T-042-onlyoffice-edicion-con-version-nueva
 creada: 2026-11-25
 depende: T-041
-pr:
+pr: #62
 ---
 
 ## Objetivo
@@ -43,13 +43,13 @@ del archivo (con auditoría) y la vista previa y la búsqueda se actualizan sola
   - Respuesta siempre `{"error": 0}` cuando terminó bien.
 
 ## Criterios de aceptación
-- [ ] CA1 Callback con JWT válido y `status=2` (descarga reemplazada por una falsa) → versión `numero+1`, `origen="subida"`, fila de auditoría,
+- [x] CA1 Callback con JWT válido y `status=2` (descarga reemplazada por una falsa) → versión `numero+1`, `origen="subida"`, fila de auditoría,
   y jobs de analizar y vista PDF encolados.
-- [ ] CA2 JWT inválido, token de URL alterado o `url` con otro host → `{"error": 1}` y ninguna versión nueva.
-- [ ] CA3 Aislamiento: un token de callback de la empresa A nunca escribe en un archivo de B; un usuario que perdió el permiso de escritura → sin versión nueva.
-- [ ] CA4 `config_editor` da `mode="view"` a quien no puede escribir (por ejemplo, el cliente con acceso) y `mode="edit"` al equipo.
-- [ ] CA5 Mismo contenido que la versión actual → no se crea versión.
-- [ ] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] CA2 JWT inválido, token de URL alterado o `url` con otro host → `{"error": 1}` y ninguna versión nueva.
+- [x] CA3 Aislamiento: un token de callback de la empresa A nunca escribe en un archivo de B; un usuario que perdió el permiso de escritura → sin versión nueva.
+- [x] CA4 `config_editor` da `mode="view"` a quien no puede escribir (por ejemplo, el cliente con acceso) y `mode="edit"` al equipo.
+- [x] CA5 Mismo contenido que la versión actual → no se crea versión.
+- [x] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
 
 ## Fuera de alcance
 - `forcesave` desde el agente y aviso dentro del editor (plan: "Agente y ONLYOFFICE a la vez"). Coedición con presencia. Historial de versiones dentro de ONLYOFFICE.
@@ -60,5 +60,7 @@ del archivo (con auditoría) y la vista previa y la búsqueda se actualizan sola
 - Se aceptan JWT en cuerpo y cabecera (incluido el envoltorio `payload` de Docs). Para los estados 2 y 6 la descarga exige el origen configurado, sin redirecciones ni proxy, y usa el mismo almacén y límite que una subida. Si Docs anuncia un origen HTTPS público, `ONLYOFFICE_URL_INTERNA` debe coincidir y ser accesible desde la app.
 - Después de descargar se comprueban otra vez los permisos y se bloquea el archivo. Los guardados de la misma sesión pueden continuar tras un estado 6. Un reintento mantiene el historial y una subida manual posterior invalida la edición anterior.
 - Versión, auditoría y jobs quedan en la misma transacción. La columna del autor se llama `subida_por`. El worker existente encola la indexación al obtener el PDF. Las pruebas usan un callback HTTP con descarga sustituida y una base PostgreSQL real.
+
+- Humo HTTP local: se comprobó el SHA-256 de la descarga, el rechazo de redirecciones y el límite de tamaño. Suite local aprobada.
 
 ## Dictamen del auditor

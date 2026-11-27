@@ -1,11 +1,11 @@
 ---
 id: T-040
 titulo: Visor 3D e IFC en el navegador
-estado: en-curso
+estado: en-revision
 rama: codex/T-040-visor-3d-e-ifc-en-el-navegador
 creada: 2026-11-25
 depende: — (etapa 1 en main)
-pr:
+pr: #58
 ---
 
 ## Objetivo
@@ -42,12 +42,12 @@ del agente al lado como en el PDF.
 - Cargá los scripts del vendor con `?v={{ static_version }}`.
 
 ## Criterios de aceptación
-- [ ] CA1 `python -m scripts.verificar_vendor` pasa con los tres directorios y falla si se altera un byte de `o3dv.min.js` (prueba).
-- [ ] CA2 `_tipo_de_vista` devuelve `modelo3d` para un GLB y un IFC de prueba y `None` para un `.glb` que en realidad es texto.
-- [ ] CA3 La página de un GLB renderiza el contenedor del visor 3D con la ruta del vendor local, sin URLs de CDN.
-- [ ] CA4 Aislamiento: `/contenido` de un modelo de otra empresa → 404 (sumá el caso a `tests/test_visor.py`).
-- [ ] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
-- [ ] En la Bitácora: versión de cada paquete, licencia y la lista de archivos vendorizados.
+- [x] CA1 `python -m scripts.verificar_vendor` pasa con los tres directorios y falla si se altera un byte de `o3dv.min.js` (prueba).
+- [x] CA2 `_tipo_de_vista` devuelve `modelo3d` para un GLB y un IFC de prueba y `None` para un `.glb` que en realidad es texto.
+- [x] CA3 La página de un GLB renderiza el contenedor del visor 3D con la ruta del vendor local, sin URLs de CDN.
+- [x] CA4 Aislamiento: `/contenido` de un modelo de otra empresa → 404 (sumá el caso a `tests/test_visor.py`).
+- [x] `tests/test_permisos.py` sigue pasando y `python -m scripts.checks.fast` no imprime nada.
+- [x] En la Bitácora: versión de cada paquete, licencia y la lista de archivos vendorizados.
 
 ## Fuera de alcance
 - Modelos de varios archivos (glTF con `.bin` aparte, OBJ con `.mtl`). FBX y SKP. That Open y `.frag`. Medir o cortar en el visor.
